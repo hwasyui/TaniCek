@@ -37,7 +37,7 @@ if not cap.isOpened():
 
 print("Press 'q' to quit.")
 
-max_attempts = 100
+max_attempts = 30
 attempts = 0
 recognized = False
 verify_count = 0
