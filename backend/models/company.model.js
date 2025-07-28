@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const CompanySchema = new mongoose.Schema({
     name: { 
@@ -15,4 +16,16 @@ const CompanySchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Company', CompanySchema);
+// Virtual populate
+CompanySchema.virtual('machines', {
+  ref: 'Machine',
+  localField: '_id',
+  foreignField: 'company',
+});
+
+// Enable virtuals in JSON output
+CompanySchema.set('toObject', { virtuals: true });
+CompanySchema.set('toJSON', { virtuals: true });
+
+const Company = mongoose.model('Company', CompanySchema);
+export default Company;
