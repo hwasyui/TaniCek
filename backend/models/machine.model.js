@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const MachineSchema = new mongoose.Schema({
     user_id: { 
@@ -12,6 +13,10 @@ const MachineSchema = new mongoose.Schema({
     type: { 
         type: String 
     },
+    company: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Company' 
+    },
     location_lat: { 
         type: Number 
     },
@@ -24,4 +29,5 @@ const MachineSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('Machine', MachineSchema);
+const Machine = mongoose.model('Machine', MachineSchema);
+export default Machine;

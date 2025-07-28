@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
-
+// const mongoose = require('mongoose');
+import mongoose from "mongoose";
+import bcrypt from 'bcrypt';
 const UserSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -7,6 +8,10 @@ const UserSchema = new mongoose.Schema({
         unique: true
     },
     name: {
+        type: String,
+        required: true
+    },
+    password: {
         type: String,
         required: true
     },
@@ -27,6 +32,20 @@ const UserSchema = new mongoose.Schema({
         ref: 'Company',
         required: true
     },
+    socialId: {
+        type: String,
+        default: null
+    },
+    image: {
+        type: Buffer, // storing as binary data
+    }
 });
 
-module.exports = mongoose.model('User', UserSchema);
+UserSchema.pre("save", async function() {
+    if ((this.password && this.isNew) || this.isModified("password")) {
+        this.password = await bcrypt.hash(this.password, 10);
+    }
+});
+
+const User = mongoose.model('User', UserSchema);
+export default User;
