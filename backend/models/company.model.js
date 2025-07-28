@@ -2,25 +2,28 @@
 import mongoose from "mongoose";
 
 const CompanySchema = new mongoose.Schema({
-    name: { 
-        type: String, 
-        required: true, 
-        unique: true 
+    name: {
+        type: String,
+        required: true,
+        unique: true
     },
-    address: { 
-        type: String 
+    address: {
+        type: String
     },
-    created_at: { 
-        type: Date, 
-        default: Date.now 
+    created_at: {
+        type: Date,
+        default: Date.now
+    },
+    image: {
+        type: Buffer, // storing as binary data
     }
 });
 
 // Virtual populate
 CompanySchema.virtual('machines', {
-  ref: 'Machine',
-  localField: '_id',
-  foreignField: 'company',
+    ref: 'Machine',
+    localField: '_id',
+    foreignField: 'company',
 });
 
 // Enable virtuals in JSON output

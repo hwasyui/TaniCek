@@ -1,6 +1,6 @@
 // const mongoose = require('mongoose');
 import mongoose from "mongoose";
-
+import bcrypt from 'bcrypt';
 const UserSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -36,6 +36,9 @@ const UserSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    image: {
+        type: Buffer, // storing as binary data
+    }
 });
 
 UserSchema.pre("save", async function() {

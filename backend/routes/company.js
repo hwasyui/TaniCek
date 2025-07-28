@@ -1,17 +1,24 @@
 import { Router } from "express";
-const router = Router();
+import multer from "multer";
 import Machine from "../models/machine.model.js";
-import Company from "../models/company.model.js"; // Needed for DELETE route
-// import reviewRouter from './review.js';
+import Company from "../models/company.model.js";
+import userRouter from "./user.byCompany.js";
 
-// POST /company
-router.post('/', async (req, res) => {
+const router = Router();
+
+// Set up multer for handling multipart/form-data
+const upload = multer();
+
+// POST /companies (with image)
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     const { name, address } = req.body;
+    const image = req.file;
 
     const newCompany = new Company({
       name,
       address,
+      image, // Store as buffer; change if using disk
     });
 
     const savedCompany = await newCompany.save();
@@ -25,7 +32,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /company
+// GET /companies
 router.get('/', async (req, res) => {
   const { keyword, page = 1, pageSize = 10 } = req.query;
 
@@ -64,67 +71,27 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /company/:companyId
+// GET /companies/:companyId
 router.get('/:companyId', async (req, res) => {
   const { companyId } = req.params;
 
   try {
-    const company = await Company.findById(companyId)
+    const company = await Company.findById(companyId).populate("machines");
 
-    if (!movie) {
-      return res.status(404).json({ error: 'Movie not found' });
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
     }
 
     res.status(200).json({
-      message: 'Movie fetched successfully',
-      data: movie,
+      message: 'Company fetched successfully',
+      data: company,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// DELETE /movie/:movieId
-// router.delete('/:movieId', async (req, res) => {
-//   const { movieId } = req.params;
-
-//   try {
-//     const deleted = await Movie.findByIdAndDelete(movieId);
-//     if (!deleted) return res.status(404).json({ error: 'Movie not found' });
-
-//     // Optional: delete all reviews associated with this movie
-//     await Review.deleteMany({ movie: movieId });
-
-//     res.status(200).json({ message: 'Movie deleted successfully' });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// // PUT /movie/:movieId
-// router.put('/:movieId', async (req, res) => {
-//   const { movieId } = req.params;
-//   const { title, posterURL, content, year, director, genres } = req.body;
-
-//   try {
-//     const updatedMovie = await Movie.findByIdAndUpdate(
-//       movieId,
-//       { title, posterURL, content, year, director, genres: genres || [] },
-//       { new: true, runValidators: true }
-//     );
-
-//     if (!updatedMovie) return res.status(404).json({ error: 'Movie not found' });
-
-//     res.status(200).json({
-//       message: 'Movie updated successfully',
-//       data: updatedMovie,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
-
-// // Nested review routes
-// router.use('/:movieId/review', reviewRouter);
+// Nested user routes for each company
+router.use('/:companyId/user', userRouter);
 
 export default router;
