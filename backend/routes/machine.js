@@ -1,135 +1,47 @@
-import { Router } from "express";
-const router = Router();
-import Machine from "../models/machine.model.js";
-import Company from "../models/company.model.js"; // Needed for DELETE route
-// import reviewRouter from './review.js';
+import express from 'express';
+import {
+  createMachine,
+  getAllMachines,
+  getMachineById,
+  updateMachine,
+  deleteMachine
+} from '../controllers/machine.controller.js';
 
-// POST /movie
-router.post('/', async (req, res) => {
-  try {
-    const { title, posterURL, content, year, director, genres } = req.body;
+import {
+  createUserLog,
+  getUserLogsByMachine,
+  getUserLogById,
+  updateUserLog,
+  deleteUserLog
+} from '../controllers/userlog.controller.js';
 
-    const newMovie = new Movie({
-      title,
-      posterURL,
-      content,
-      year,
-      director,
-      genres: genres || [], // default to empty array if not provided
-    });
+import { authenticate } from '../middleware/auth.js';
 
-    const savedMovie = await newMovie.save();
+const router = express.Router({ mergeParams: true }); // penting agar :companyId bisa dibaca
 
-    res.status(201).json({
-      message: 'Movie added successfully',
-      data: savedMovie,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.use(authenticate);
 
-// GET /movie
-router.get('/', async (req, res) => {
-  const { keyword, page = 1, pageSize = 10 } = req.query;
+// /companies/:companyId/machines
+router.route('/')
+  .post(createMachine)
+  .get(getAllMachines);
 
-  const limit = Math.max(1, parseInt(pageSize, 10));
-  const skip = (Math.max(1, parseInt(page, 10)) - 1) * limit;
+// /companies/:companyId/machines/:id
+router.route('/:id')
+  .get(getMachineById)
+  .put(updateMachine)
+  .delete(deleteMachine);
 
-  const filter = keyword
-    ? {
-        $or: [
-          { title: { $regex: keyword, $options: 'i' } },
-          { content: { $regex: keyword, $options: 'i' } },
-          { genres: { $regex: keyword, $options: 'i' } }, // Allow searching genres too
-        ],
-      }
-    : {};
+// Nested logs route
+// /companies/:companyId/machines/:machineId/logs
+router.route('/:machineId/logs')
+  .post(createUserLog)
+  .get(getUserLogsByMachine);
 
-  try {
-    const [movies, total] = await Promise.all([
-      Movie.find(filter).skip(skip).limit(limit).populate('reviews'),
-      Movie.countDocuments(filter),
-    ]);
-
-    const totalPages = Math.ceil(total / limit);
-
-    res.status(200).json({
-      message: 'Movies fetched successfully',
-      data: movies,
-      total,
-      totalPages,
-      page: parseInt(page),
-      pageSize: limit,
-      hasNextPage: page * limit < total,
-      hasPrevPage: page > 1,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /movie/:movieId
-router.get('/:movieId', async (req, res) => {
-  const { movieId } = req.params;
-
-  try {
-    const movie = await Movie.findById(movieId).populate('reviews');
-
-    if (!movie) {
-      return res.status(404).json({ error: 'Movie not found' });
-    }
-
-    res.status(200).json({
-      message: 'Movie fetched successfully',
-      data: movie,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /movie/:movieId
-router.delete('/:movieId', async (req, res) => {
-  const { movieId } = req.params;
-
-  try {
-    const deleted = await Movie.findByIdAndDelete(movieId);
-    if (!deleted) return res.status(404).json({ error: 'Movie not found' });
-
-    // Optional: delete all reviews associated with this movie
-    await Review.deleteMany({ movie: movieId });
-
-    res.status(200).json({ message: 'Movie deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// PUT /movie/:movieId
-router.put('/:movieId', async (req, res) => {
-  const { movieId } = req.params;
-  const { title, posterURL, content, year, director, genres } = req.body;
-
-  try {
-    const updatedMovie = await Movie.findByIdAndUpdate(
-      movieId,
-      { title, posterURL, content, year, director, genres: genres || [] },
-      { new: true, runValidators: true }
-    );
-
-    if (!updatedMovie) return res.status(404).json({ error: 'Movie not found' });
-
-    res.status(200).json({
-      message: 'Movie updated successfully',
-      data: updatedMovie,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Nested review routes
-router.use('/:movieId/review', reviewRouter);
+// /companies/:companyId/machines/:machineId/logs/:logId
+router.route('/:machineId/logs/:logId')
+  .get(getUserLogById)
+  .put(updateUserLog)
+  .delete(deleteUserLog);
 
 export default router;

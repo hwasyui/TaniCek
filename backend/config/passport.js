@@ -5,6 +5,7 @@ import User from "../models/user.model.js";
 import pkg from 'passport-google-oauth2'
 import { ExtractJwt, Strategy as JwtStrategy} from 'passport-jwt'
 import dotenv from 'dotenv'
+
 dotenv.config()
 const { Strategy: GoogleStrategy } = pkg;
 

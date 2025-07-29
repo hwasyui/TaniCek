@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import companyRouter from './routes/company.js';
 import userGlobalRouter from './routes/user.global.js';
 import userByCompanyRouter from './routes/user.byCompany.js';
+import authRouter from './routes/auth.js';
+import machineRouter from './routes/machine.js';
 
 import './config/passport.js';
 
@@ -21,12 +23,10 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(passport.initialize());
 
-// Optional: attach authenticated user to req.user
 app.use((req, res, next) => {
-  passport.authenticate("jwt", { session: false }, (err, user, info) => {
+  passport.authenticate("jwt", { session: false }, (err, user) => {
     if (err) return next(err);
     if (user) req.user = user;
     next();
@@ -34,10 +34,12 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.get('/', (req, res) => res.send('Hello World!'));
+app.get('/', (req, res) => res.redirect('/companies'));
 
 app.use('/companies', companyRouter);
-app.use('/user', userGlobalRouter); // For developers
+app.use('/user', userGlobalRouter);
+app.use('/auth', authRouter);
+app.use('/machines', machineRouter);
 
 // Global error handler
 app.use((err, req, res, next) => {

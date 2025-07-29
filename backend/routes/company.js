@@ -3,6 +3,7 @@ import multer from "multer";
 import Machine from "../models/machine.model.js";
 import Company from "../models/company.model.js";
 import userRouter from "./user.byCompany.js";
+import MachineRouter from "./machine.js";
 
 const router = Router();
 
@@ -93,5 +94,8 @@ router.get('/:companyId', async (req, res) => {
 
 // Nested user routes for each company
 router.use('/:companyId/user', userRouter);
+// GET /companies/:companyId/machines
+router.use('/:companyId/machines', MachineRouter);
+
 
 export default router;
