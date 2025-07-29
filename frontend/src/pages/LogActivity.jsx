@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchAllMachines, addLog } from '../api';
 
-    const LogActivity = () => {
-    const navigate = useNavigate();
+const LogActivity = () => {
+const navigate = useNavigate();
     const [machines, setMachines] = useState([]);
     const [selectedMachineId, setSelectedMachineId] = useState('');
     const [note, setNote] = useState('');
@@ -31,12 +31,12 @@ import { fetchAllMachines, addLog } from '../api';
             { id: 'machine-4', name: 'HVAC Storage Warehouse' },
         ];
         setMachines(dummyMachines);
-
+        
         // --- SIMULATE WEATHER FETCH (Backend will do this upon log submission) ---
         setWeatherInfo({
-            temperature: 28,
-            humidity: 85,
-            weather_main: 'Clouds',
+            temperature: 32,
+            humidity: 63,
+            weather_main: 'Sunny',
             aqi: 3,
         });
 
@@ -87,14 +87,14 @@ import { fetchAllMachines, addLog } from '../api';
     return (
         <div className="min-h-screen bg-primary-bg p-6">
         <div className="max-w-2xl mx-auto bg-card-bg p-8 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-text-dark mb-6 text-center">Add Operator Daily Log</h2>
+            <h2 className="text-green-500 text-2xl font-bold text-text-dark mb-6 text-center">Add Operator Daily Log</h2>
             <form onSubmit={handleSubmit}>
             <div className="mb-4">
                 <label className="block text-text-dark text-sm font-semibold mb-2" htmlFor="machineSelect">
-                Select Machine <span className="text-tani-red-500">*</span>
+                Select Machine <span className="text-red-500">*</span>
                 </label>
                 <select
-                className="shadow border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500"
+                className="shadow border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                 id="machineSelect"
                 value={selectedMachineId}
                 onChange={(e) => setSelectedMachineId(e.target.value)}
@@ -110,12 +110,12 @@ import { fetchAllMachines, addLog } from '../api';
             </div>
             <div className="mb-4">
                 <label className="block text-text-dark text-sm font-semibold mb-2" htmlFor="note">
-                Log Notes <span className="text-tani-red-500">*</span>
+                Log Notes <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500 h-32"
+                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 h-32"
                 id="note"
-                placeholder="Enter your log notes here..."
+                placeholder="enter your log notes here..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 required
@@ -130,19 +130,19 @@ import { fetchAllMachines, addLog } from '../api';
                     <p className="text-sm text-text-light">Humidity: {weatherInfo.humidity}%</p>
                     <p className="text-sm text-text-light">Condition: {weatherInfo.weather_main}</p>
                     <p className="text-sm text-text-light">AQI: {weatherInfo.aqi} (Air Quality Indeks)</p>
-                    <p className="text-xs text-tani-blue-500 mt-2"> Weather data will be automatically retrieved by the system when this log is saved. </p>
+                    <p className="text-xs text-gray-500 mt-2"> Weather data will be automatically retrieved by the system when this log is saved. </p>
                 </>
                 ):(
                 <p className="text-sm text-text-light italic">Loading for Weather Info...</p>
                 )}
             </div>
 
-            {error && <p className="text-tani-red-500 text-sm italic mb-4">{error}</p>}
-            {success && <p className="text-tani-green-500 text-sm italic mb-4">daily log saved!</p>}
+            {error && <p className="text-red-500 text-sm italic mb-4">{error}</p>}
+            {success && <p className="text-green-500 text-sm italic mb-4">daily log saved!</p>}
 
             <div className="flex items-center justify-between">
                 <button
-                className="bg-tani-green-500 hover:bg-tani-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
                 >
@@ -151,7 +151,7 @@ import { fetchAllMachines, addLog } from '../api';
                 <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
+                className="bg-gray-300 hover:bg-gray-400 text-black text-opacity-50 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                 >
                 Cancel
                 </button>

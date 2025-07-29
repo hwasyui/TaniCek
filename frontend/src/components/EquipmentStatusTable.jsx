@@ -9,7 +9,7 @@ let icon = null;
 
     switch (level) {
         case 'High':
-        colorClass = 'bg-tani-red-500';
+        colorClass = 'bg-red-500';
         statusText = 'High';
         icon = (
             <svg xmlns="http://www.w3.org/2000/svg" 
@@ -25,7 +25,7 @@ let icon = null;
         );break
 
         case 'Medium':
-        colorClass = 'bg-tani-yellow-500';
+        colorClass = 'bg-yellow-500';
         statusText = 'Medium';
         icon = (
             <svg xmlns="http://www.w3.org/2000/svg" 
@@ -41,7 +41,7 @@ let icon = null;
         );break
 
         case 'Low':
-        colorClass = 'bg-tani-green-500';
+        colorClass = 'bg-green-500';
         statusText = 'Low';
         icon = (
             <svg xmlns="http://www.w3.org/2000/svg" 
@@ -69,7 +69,7 @@ let icon = null;
         {(level === 'High' || level === 'Medium') && reason && (
             <button
             onClick={onClick}
-            className="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
+            className="ml-2 text-black-500 hover:text-black-700 focus:outline-none"
             title="See Details"
             >
             <svg xmlns="http://www.w3.org/2000/svg" 
@@ -109,7 +109,7 @@ const handleCloseReason = () => {
 if (!equipment || equipment.length === 0) {
     return (
     <p className="text-center text-text-light italic mt-8">
-        Undefined. Click Add button! <Link to="/add-equipment" className="text-tani-green-500 hover:underline">Add New Tools</Link>.
+        Undefined. Click Add button! <Link to="/add-equipment" className="text-green-500 hover:underline">Add New Tools</Link>.
     </p>
     )
 }
@@ -156,7 +156,7 @@ if (!equipment || equipment.length === 0) {
                         onClick={() => handleShowReason(item.name, item.forecast.reason)}
                     />
                     ) : (
-                    <span className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-200 rounded-full">There is no data prediction</span>
+                    <span className="px-3 py-1 text-xs font-semibold text-gray-500 bg-gray-600 rounded-full">There is no data prediction</span>
                     )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light">
@@ -169,12 +169,12 @@ if (!equipment || equipment.length === 0) {
 
         {/* Reason Modal */}
         {showReasonModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-            <div className="bg-card-bg p-8 rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up">
-            <h3 className="text-xl font-bold text-text-dark mb-4">Details : {currentEquipmentName}</h3>
+            <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-card-bg p-10 bg-white rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up">
+                <h3 className="text-xl font-bold text-text-dark mb-4">Details : {currentEquipmentName}</h3>
             <p className="text-text-light mb-6">{currentReason}</p>
                 <div className="flex justify-end">
-                    <button onClick={handleCloseReason} className="bg-tani-blue-500 hover:bg-tani-blue-600 text-white font-bold py-2 px-4 rounded-lg"> Close </button>
+                    <button onClick={handleCloseReason} className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg"> Close </button>
                 </div>
             </div>
             </div>
