@@ -1,5 +1,6 @@
 import Machine from '../models/machine.model.js';
 import dotenv from 'dotenv';
+import aiAnalysis from '../models/aiAnalysis.model.js';
 dotenv.config();
 
 const API_KEY = process.env.GEMINI_API_KEY;
@@ -119,5 +120,15 @@ export async function analyzeAllMachines() {
     }
   }
 
-  return results;
+  // Save single document per day
+const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+await aiAnalysis.findOneAndUpdate(
+  { createdAt: { $gte: new Date(`${today}T00:00:00.000Z`), $lt: new Date(`${today}T23:59:59.999Z`) } },
+  { aiAnalysis: results },
+  { upsert: true, new: true }
+);
+
+return results;
+
 }

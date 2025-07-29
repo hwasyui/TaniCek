@@ -55,7 +55,7 @@ export const deleteMachine = async (req, res) => {
 
 export const getAllMachinesAIPrediction = async (req, res) => {
   try {
-    console.log("🔐 Token used:", process.env.AI_API_KEY);
+    console.log("Token used:", process.env.GEMINI_API_KEY);
     const results = await analyzeAllMachines();
     return res.json(results);
   } catch (error) {
