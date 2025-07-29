@@ -59,3 +59,12 @@ export const register = async (req, res) => {
     return res.status(500).json({ message: "Registration failed", error: error.message });
   }
 };
+
+export const logout = async (req, res) => {
+  try {
+    // Tidak ada proses invalidasi token di server karena JWT bersifat stateless.
+    return res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    return res.status(500).json({ message: "Logout failed", error: error.message });
+  }
+};

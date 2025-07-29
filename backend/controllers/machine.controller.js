@@ -42,9 +42,13 @@ export const updateMachine = async (req, res) => {
 
 export const deleteMachine = async (req, res) => {
   try {
-    await Machine.findByIdAndDelete(req.params.id);
-    res.status(204).send();
+    const deletedMachine = await Machine.findByIdAndDelete(req.params.id);
+
+    if (!deletedMachine) {
+      return res.status(404).json({ message: "Machine not found" });
+    }
+    return res.status(200).json({ message: "Machine deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Delete failed", error: error.message });
+    return res.status(500).json({ message: "Delete failed", error: error.message });
   }
 };
