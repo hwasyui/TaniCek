@@ -23,10 +23,6 @@ const MachineSchema = new mongoose.Schema({
     location_lon: { 
         type: Number 
     },
-    created_at: { 
-        type: Date, 
-        default: Date.now 
-    },
     userLogs: [
         { 
             type: mongoose.Schema.Types.ObjectId, 
