@@ -26,7 +26,15 @@ const MachineSchema = new mongoose.Schema({
     created_at: { 
         type: Date, 
         default: Date.now 
-    }
+    },
+    userLogs: [
+        { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: 'UserLog' 
+        }
+    ]
+}, {
+    timestamps: true
 });
 
 const Machine = mongoose.model('Machine', MachineSchema);
