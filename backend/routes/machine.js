@@ -4,7 +4,8 @@ import {
   getAllMachines,
   getMachineById,
   updateMachine,
-  deleteMachine
+  deleteMachine,
+  getAllMachinesAIPrediction
 } from '../controllers/machine.controller.js';
 
 import {
@@ -25,7 +26,8 @@ router.use(authenticate);
 router.route('/')
   .post(createMachine)
   .get(getAllMachines);
-
+  
+router.get('/ai-analysis', getAllMachinesAIPrediction);
 // /companies/:companyId/machines/:id
 router.route('/:id')
   .get(getMachineById)

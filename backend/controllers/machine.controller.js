@@ -1,5 +1,5 @@
 import Machine from '../models/machine.model.js';
-
+import { analyzeAllMachines } from '../utils/aiAnalyzer.js';
 export const createMachine = async (req, res) => {
   try {
     const machine = await Machine.create({ ...req.body, company: req.params.companyId, user_id: req.user._id });
@@ -52,3 +52,15 @@ export const deleteMachine = async (req, res) => {
     return res.status(500).json({ message: "Delete failed", error: error.message });
   }
 };
+
+export const getAllMachinesAIPrediction = async (req, res) => {
+  try {
+    console.log("🔐 Token used:", process.env.AI_API_KEY);
+    const results = await analyzeAllMachines();
+    return res.json(results);
+  } catch (error) {
+    console.error("AI analysis for all machines failed:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
