@@ -7,8 +7,6 @@ const userLogSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
         required: true },
-    date: { type: Date, 
-        required: true },
     note: { type: String },
     weather: {
         weather_main: { type: String },       // e.g., "Rain"
