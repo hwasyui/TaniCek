@@ -1,18 +1,53 @@
-import UserLog from '../models/userlog.model.js';
 import mongoose from 'mongoose';
+
+import UserLog from '../models/userlog.model.js';
+import Machine from '../models/machine.model.js';
+import { fetchWeather } from '../utils/weather.js';
 
 export const createUserLog = async (req, res) => {
   try {
+    const { note } = req.body;
+    const { machineId } = req.params;
+
+    const machine = await Machine.findById(machineId);
+    if (!machine) {
+      return res.status(404).json({ error: 'Machine not found' });
+    }
+
+    let weather = {};
+    const apiKey = process.env.OPENWEATHER_API_KEY;
+
+    if (machine.location_lat && machine.location_lon) {
+      try {
+        weather = await fetchWeather(machine.location_lat, machine.location_lon, apiKey);
+      } catch (weatherErr) {
+        console.error('Weather fetch error:', weatherErr.message);
+        weather = { description: 'Failed to fetch weather' };
+      }
+    } else {
+      weather = { description: 'No coordinates provided' };
+    }
+
     const log = await UserLog.create({
-      ...req.body,
-      machine: req.params.machineId,
+      machine: machineId,
       user: req.user._id,
+      note,
+      weather
     });
-    res.status(201).json(log);
+
+    await Machine.findByIdAndUpdate(machineId, {
+      $push: { userLogs: log._id }
+    });
+
+    res.status(201).json({
+      message: 'User log created successfully',
+      data: log
+    });
   } catch (error) {
-    res.status(500).json({ message: "Create log failed", error: error.message });
+    res.status(500).json({ message: 'Create log failed', error: error.message });
   }
 };
+
 
 export const getUserLogsByMachine = async (req, res) => {
   try {
@@ -77,3 +112,4 @@ export const deleteUserLog = async (req, res) => {
     res.status(500).json({ message: "Delete log failed", error: error.message });
   }
 };
+

@@ -7,8 +7,6 @@ const userLogSchema = new mongoose.Schema({
     user: { type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
         required: true },
-    date: { type: Date, 
-        required: true },
     note: { type: String },
     weather: {
         weather_main: { type: String },       // e.g., "Rain"
@@ -17,8 +15,7 @@ const userLogSchema = new mongoose.Schema({
         temp_max: { type: Number },           // in Kelvin by default
         pressure: { type: Number },           // ground level pressure, hPa
         cloudiness: { type: Number }          // % cloud coverage
-    },
-  created_at: { type: Date, default: Date.now }
-});
+    }
+}, {timestamps: true});
 
 export default mongoose.model('UserLog', userLogSchema);

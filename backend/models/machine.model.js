@@ -18,14 +18,12 @@ const MachineSchema = new mongoose.Schema({
         ref: 'Company' 
     },
     location_lat: { 
-        type: Number 
+        type: Number,
+        required: true
     },
     location_lon: { 
-        type: Number 
-    },
-    created_at: { 
-        type: Date, 
-        default: Date.now 
+        type: Number,
+        required: true
     },
     userLogs: [
         { 

@@ -23,10 +23,6 @@ const UserSchema = new mongoose.Schema({
         default: false,
         type: Boolean
     },
-    created_at: {
-        type: Date,
-        default: Date.now
-    },
     company_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Company',
@@ -38,8 +34,8 @@ const UserSchema = new mongoose.Schema({
     },
     image: {
         type: Buffer, // storing as binary data
-    }
-});
+    }, 
+},{timestamps: true} );
 
 UserSchema.pre("save", async function() {
     if ((this.password && this.isNew) || this.isModified("password")) {

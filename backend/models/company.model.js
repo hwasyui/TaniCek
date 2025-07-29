@@ -10,14 +10,10 @@ const CompanySchema = new mongoose.Schema({
     address: {
         type: String
     },
-    created_at: {
-        type: Date,
-        default: Date.now
-    },
     image: {
         type: Buffer, // storing as binary data
     }
-});
+}, {timestamps: true});
 
 // Virtual populate
 CompanySchema.virtual('machines', {
