@@ -1,18 +1,25 @@
 import jwt from 'jsonwebtoken';
+import User from '../models/user.model.js';
 
-export const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    return res.status(401).json({ message: "Authorization header missing or malformed" });
-  }
-
-  const token = authHeader.split(" ")[1];
-
+export const authenticate = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Unauthorized: No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+
+    const user = await User.findById(decoded.id).select('-password'); // atau apapun fieldnya
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized: User not found' });
+    }
+
+    req.user = user; // 🟢 Ini yang kamu butuhkan!
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Invalid or expired token" });
+    res.status(401).json({ message: 'Unauthorized', error: error.message });
   }
 };

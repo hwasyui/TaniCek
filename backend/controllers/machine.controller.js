@@ -2,7 +2,7 @@ import Machine from '../models/machine.model.js';
 
 export const createMachine = async (req, res) => {
   try {
-    const machine = await Machine.create({ ...req.body, owner: req.user.id });
+    const machine = await Machine.create({ ...req.body, company: req.params.companyId, user_id: req.user._id });
     res.status(201).json(machine);
   } catch (error) {
     res.status(500).json({ message: "Create machine failed", error: error.message });
@@ -11,7 +11,10 @@ export const createMachine = async (req, res) => {
 
 export const getAllMachines = async (req, res) => {
   try {
-    const machines = await Machine.find({ owner: req.user.id });
+    const companyId = req.params.companyId;
+
+    const machines = await Machine.find({ company: companyId });
+
     res.status(200).json(machines);
   } catch (error) {
     res.status(500).json({ message: "Fetch machines failed", error: error.message });
