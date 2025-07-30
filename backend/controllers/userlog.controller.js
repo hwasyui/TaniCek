@@ -53,7 +53,6 @@ export const getUserLogsByMachine = async (req, res) => {
   try {
     const logs = await UserLog.find({ 
       machine: req.params.machineId,
-      user: req.user._id 
     });
     res.status(200).json(logs);
   } catch (error) {
