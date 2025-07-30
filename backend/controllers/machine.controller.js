@@ -1,5 +1,6 @@
 import Machine from '../models/machine.model.js';
-import { analyzeAllMachines } from '../utils/aiAnalyzer.js';
+
+// CREATE MACHINE
 export const createMachine = async (req, res) => {
   try {
     const machine = await Machine.create({ ...req.body, company: req.params.companyId, user_id: req.user._id });
@@ -9,6 +10,7 @@ export const createMachine = async (req, res) => {
   }
 };
 
+// READ ALL MACHINES
 export const getAllMachines = async (req, res) => {
   try {
     const companyId = req.params.companyId;
@@ -21,9 +23,10 @@ export const getAllMachines = async (req, res) => {
   }
 };
 
+// READ MACHINE BY ID
 export const getMachineById = async (req, res) => {
   try {
-    const machine = await Machine.findById(req.params.id);
+    const machine = await Machine.findById(req.params.machineId);
     if (!machine) return res.status(404).json({ message: "Machine not found" });
     res.status(200).json(machine);
   } catch (error) {
@@ -31,18 +34,20 @@ export const getMachineById = async (req, res) => {
   }
 };
 
+// UPDATE MACHINE
 export const updateMachine = async (req, res) => {
   try {
-    const machine = await Machine.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const machine = await Machine.findByIdAndUpdate(req.params.machineId, req.body, { new: true });
     res.status(200).json(machine);
   } catch (error) {
     res.status(500).json({ message: "Update failed", error: error.message });
   }
 };
 
+// DELETE MACHINE
 export const deleteMachine = async (req, res) => {
   try {
-    const deletedMachine = await Machine.findByIdAndDelete(req.params.id);
+    const deletedMachine = await Machine.findByIdAndDelete(req.params.machineId);
 
     if (!deletedMachine) {
       return res.status(404).json({ message: "Machine not found" });
@@ -52,15 +57,3 @@ export const deleteMachine = async (req, res) => {
     return res.status(500).json({ message: "Delete failed", error: error.message });
   }
 };
-
-export const getAllMachinesAIPrediction = async (req, res) => {
-  try {
-    console.log("Token used:", process.env.GEMINI_API_KEY);
-    const results = await analyzeAllMachines();
-    return res.json(results);
-  } catch (error) {
-    console.error("AI analysis for all machines failed:", error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-};
-
