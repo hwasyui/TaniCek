@@ -1,10 +1,9 @@
 const API_BASE_URL = 'http://localhost:3000/api'; // *** IMPORTANT: Replace with your actual Express backend URL ***
 
-// Helper to get auth token (assuming stored in localStorage after login)
-const getAuthHeaders = () => {
-const token = localStorage.getItem('authToken'); // Adjust if you use a different storage or state
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
-};
+    const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    };
 
     const handleResponse = async (response) => {
     const data = await response.json();
@@ -143,7 +142,20 @@ const token = localStorage.getItem('authToken'); // Adjust if you use a differen
         console.error('API Add Log Error:', error);
         return { success: false, message: error.message };
     }
-};
+    };
+
+    // --- User profile endpoint ---
+    export const fetchUserProfile = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/profile`, { 
+        headers: getAuthHeaders(),
+        });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error('Something wrong with user profile:', error);
+        return { success: false, message: error.message };
+    }
+    };
 
 // --- You'll add more API calls here for Weather Logs, Forecasts, Reminders if needed ---
 // For instance, fetchActivityHistory, fetchReminders, etc.
