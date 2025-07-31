@@ -122,7 +122,7 @@ try {
                 type="submit"
                 disabled={loading}
             >
-                {loading ? 'Loading...' : 'Saved'}
+            {loading ? 'Loading...' : 'Save'}
             </button>
             <button
                 type="button"

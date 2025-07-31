@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
-import AddEquipmentForm from '../components/AddEquipmentForm'; // Import AddEquipmentForm
+import AddEquipmentForm from '../components/AddEquipmentForm';
 import LogActivityForm from '../components/LogActivityForm';
 import { checkAuthStatus, fetchAllMachinesWithForecasts } from '../api';
 
@@ -12,7 +12,7 @@ const Dashboard = () => {
     const [equipmentData, setEquipmentData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false); // State for Add Equipment Modal
+    const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false); 
     const [showLogActivityModal, setShowLogActivityModal] = useState(false);
     const [currentWeather, setCurrentWeather] = useState(null);
 
@@ -72,11 +72,11 @@ const Dashboard = () => {
             setError(err.message || 'Failed to load dashboard data');
             setLoading(false);
         }
-    }, [navigate]); // Add navigate to the dependency array
+    }, [navigate]); 
 
     useEffect(() => {
         loadDashboardData();
-    }, [loadDashboardData]); // Depend on the memoized loadDashboardData
+    }, [loadDashboardData]); 
 
     const handleLogout = async () => {
         navigate('/login');
@@ -95,9 +95,9 @@ const Dashboard = () => {
     const statusCounts = getStatusCounts();
 
     const handleFormSuccess = () => {
-        loadDashboardData(); // Reload data after successful form submission
-        setShowAddEquipmentModal(false); // Close the modal
-        setShowLogActivityModal(false); // Close the log activity modal if it was open
+        loadDashboardData(); 
+        setShowAddEquipmentModal(false);
+        setShowLogActivityModal(false);
     };
 
     if (loading) {
@@ -237,15 +237,6 @@ const Dashboard = () => {
                             </svg>
                             <span>Add Daily Log</span>
                         </button>
-                        <button
-                            onClick={() => navigate('/activity-history')}
-                            className="bg-green-500 hover:bg-green-600 text-white text-text-dark dark:bg-green-500 dark:hover:bg-green-600 dark:text-text-light font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                            <span>AI Prediction History</span>
-                        </button>
                     </div>
 
                     <EquipmentStatusTable equipment={equipmentData} />
@@ -289,7 +280,7 @@ const Dashboard = () => {
                         <LogActivityForm
                             onClose={() => setShowLogActivityModal(false)}
                             onSuccess={handleFormSuccess}
-                            machines={equipmentData.map(eq => ({ id: eq.id, name: eq.name }))} // send data to form log
+                            machines={equipmentData.map(eq => ({ id: eq.id, name: eq.name }))} 
                         />
                     </div>
                 </div>

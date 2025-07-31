@@ -1,13 +1,13 @@
+// Frontend/src/App.jsx
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SignIn from './pages/Auth/SignIn';
-import Signup from './pages/Auth/SignUp';
+import Signup from './pages/Auth/Signup';
 import Dashboard from './pages/Dashboard';
 import { checkAuthStatus } from './api';
 
-// A component to protect routes, checks if user is authenticated
 const ProtectedRoute = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(null); // null means loading, true/false for authenticated state
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   useEffect(() => {
     const verifyAuth = async () => {
@@ -17,11 +17,8 @@ const ProtectedRoute = ({ children }) => {
       // const authResponse = await checkAuthStatus();
       // setIsAuthenticated(authResponse.isAuthenticated);
 
-      // --- SIMULATE AUTHENTICATION FOR DEVELOPMENT ---
-      // For development, we'll assume the user is authenticated after a short delay
-      // In a real app, this would be based on actual backend session/token validation
       setTimeout(() => {
-        setIsAuthenticated(true); // Simulate authenticated
+        setIsAuthenticated(true);
       }, 500);
     };
 
@@ -30,9 +27,9 @@ const ProtectedRoute = ({ children }) => {
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-primary-bg">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-        <p className="ml-4 text-text-dark">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-primary-bg dark:bg-dark-primary-bg">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tani-green-500"></div> {/* Use tani-green-500 */}
+        <p className="ml-4 text-text-dark dark:text-text-light">Loading...</p> {/* Use text-dark/light */}
       </div>
     );
   }
@@ -58,7 +55,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* You'll add more protected routes as you build out */}
         {/* <Route
           path="/activity-history"

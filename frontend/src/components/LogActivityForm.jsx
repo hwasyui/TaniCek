@@ -24,9 +24,9 @@ const logData = {
     note: note,
 };
 
-const response = await addLog(logData); // Panggil API Express Anda untuk menambahkan log
+const response = await addLog(logData);
     if (!response.success) {
-        throw new Error(response.message || 'Failed to saved');
+        throw new Error(response.message || 'Failed to save');
     }
 
     console.log('Log submitted:', response.data);
@@ -36,7 +36,7 @@ const response = await addLog(logData); // Panggil API Express Anda untuk menamb
 
     } catch (err) {
     console.error('Error submitting log:', err.message);
-    setError(err.message || 'Failed to saved');
+    setError(err.message || 'Failed to save');
     } finally {
     setLoading(false);
     }
@@ -87,7 +87,7 @@ const response = await addLog(logData); // Panggil API Express Anda untuk menamb
                 type="submit"
                 disabled={loading}
             >
-                {loading ? 'Loading...' : 'Saved'}
+                {loading ? 'Loading...' : 'Save'}
             </button>
             <button
                 type="button"
