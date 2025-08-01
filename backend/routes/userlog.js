@@ -1,4 +1,4 @@
-import express from 'express';
+import { Router } from 'express';
 import {
   createUserLog,
   getUserLogsByMachine,
@@ -9,15 +9,23 @@ import {
 
 import { authenticate } from '../middleware/auth.js';
 
-const router = express.Router({ mergeParams: true }); // penting agar :companyId bisa dibaca
+const router = Router({ mergeParams: true }); // ini penting
 
 router.use(authenticate);
 
-// Endpoint
-router.post('/:machineId/logs', createUserLog); // POST /machines/:machineId/logs
-router.get('/:machineId/logs', getUserLogsByMachine); // GET /machines/:machineId/logs
-router.get('/:machineId/logs/:logId', getUserLogById); // GET specific log
-router.put('/:machineId/logs/:logId', updateUserLog); // UPDATE specific log
-router.delete('/:machineId/logs/:logId', deleteUserLog); // DELETE specific log
+// POST /machines/:machinesId/logs
+router.post('/', createUserLog);
+
+// GET /machines/:machinesId/logs
+router.get('/', getUserLogsByMachine);
+
+// GET /machines/:machinesId/logs/:logId
+router.get('/:logId', getUserLogById);
+
+// PUT /machines/:machinesId/logs/:logId
+router.put('/:logId', updateUserLog);
+
+// DELETE /machines/:machinesId/logs/:logId
+router.delete('/:logId', deleteUserLog);
 
 export default router;

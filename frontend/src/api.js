@@ -4,6 +4,10 @@ const API_BASE_URL = 'http://localhost:3000';
     const token = localStorage.getItem('authToken');
         return token ? { 'Authorization': `Bearer ${token}` } : {};
     };
+    const getAuthHeaders = () => {
+    const token = localStorage.getItem('authToken');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+    };
 
     const handleResponse = async (response) => {
     const data = await response.json();

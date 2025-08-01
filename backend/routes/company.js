@@ -4,6 +4,7 @@ import Machine from "../models/machine.model.js";
 import Company from "../models/company.model.js";
 import userRouter from "./user.byCompany.js";
 import MachineRouter from "./machine.js";
+import aiAnalysisRouter from "./ai-analysis.js";
 
 const router = Router();
 
@@ -96,6 +97,8 @@ router.get('/:companyId', async (req, res) => {
 router.use('/:companyId/user', userRouter);
 // GET /companies/:companyId/machines
 router.use('/:companyId/machines', MachineRouter);
+
+router.use('/:companyId/ai-analysis', aiAnalysisRouter);
 
 
 export default router;

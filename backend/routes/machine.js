@@ -4,17 +4,14 @@ import {
   getAllMachines,
   getMachineById,
   updateMachine,
-  deleteMachine,
-  getAllMachinesAIPrediction
+  deleteMachine
 } from '../controllers/machine.controller.js';
 
-import {
-  createUserLog,
-  getUserLogsByMachine,
-  getUserLogById,
-  updateUserLog,
-  deleteUserLog
-} from '../controllers/userlog.controller.js';
+import userlogRouter from "./userlog.js";
+import machineAIAnalysisRouter from './machineAiAnalysis.js';
+import aiAnalysisRouter from './ai-analysis.js';
+
+import { getAllMachinesAIPrediction } from '../controllers/ai-analysis.controller.js';
 
 import { authenticate } from '../middleware/auth.js';
 
@@ -26,24 +23,22 @@ router.use(authenticate);
 router.route('/')
   .post(createMachine)
   .get(getAllMachines);
-  
-router.get('/ai-analysis', getAllMachinesAIPrediction);
-// /companies/:companyId/machines/:id
-router.route('/:id')
+
+router.use('/ai-analysis', aiAnalysisRouter);
+
+// /companies/:companyId/machines/:machinesId
+router.route('/:machineId')
   .get(getMachineById)
   .put(updateMachine)
   .delete(deleteMachine);
 
 // Nested logs route
-// /companies/:companyId/machines/:machineId/logs
-router.route('/:machineId/logs')
-  .post(createUserLog)
-  .get(getUserLogsByMachine);
+router.use('/:machineId/logs', userlogRouter);
 
-// /companies/:companyId/machines/:machineId/logs/:logId
-router.route('/:machineId/logs/:logId')
-  .get(getUserLogById)
-  .put(updateUserLog)
-  .delete(deleteUserLog);
+// Nested AI analysis route
+router.use('/:machineId/ai-analysis', machineAIAnalysisRouter);
+
+
+
 
 export default router;
