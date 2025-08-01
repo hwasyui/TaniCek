@@ -29,6 +29,7 @@ export const login = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
+        company: user.company_id
       }
     });
   } catch (error) {
@@ -37,28 +38,32 @@ export const login = async (req, res) => {
 };
 
 export const register = async (req, res) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: "username already taken" });
+      return res.status(409).json({ success: false, message: "Email already taken" });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ username, password: hashedPassword });
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+    }
+    const newUser = await User.create({ email, password: hashedPassword });
 
     return res.status(201).json({
+      success: true,
       message: "User registered successfully",
       user: {
         id: newUser._id,
-        username: newUser.username
+        email: newUser.email
       }
     });
   } catch (error) {
-    return res.status(500).json({ message: "Registration failed", error: error.message });
+    return res.status(500).json({ success: false, message: "Registration failed", error: error.message });
   }
 };
+
 
 export const logout = async (req, res) => {
   try {

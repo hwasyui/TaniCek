@@ -120,7 +120,6 @@ export async function analyzeAllMachines() {
     }
   }
 
-  // Save single document per day
 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
 await aiAnalysis.findOneAndUpdate(

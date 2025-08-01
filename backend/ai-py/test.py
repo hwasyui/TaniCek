@@ -13,7 +13,7 @@ db = client["kada-final-project"]
 users_collection = db["users"]
 
 # Fetch user image from MongoDB
-user_email = "alif@gmail.com"  # TODO: set this based on input
+user_email = "angel@gmail.com"  # TODO: set this based on input
 user_doc = users_collection.find_one({"email": user_email})
 
 if not user_doc or "image" not in user_doc or not user_doc["image"]:

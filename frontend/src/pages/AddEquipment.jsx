@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { addMachine } from '../api';
 
 const AddEquipment = () => {
-const navigate = useNavigate();
-const [name, setName] = useState('');
-const [type, setType] = useState('');
-const [locationLat, setLocationLat] = useState('');
-const [locationLon, setLocationLon] = useState('');
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState(null);
-const [success, setSuccess] = useState(false);
+    const navigate = useNavigate();
+    const [name, setName] = useState('');
+    const [type, setType] = useState('');
+    const [locationLat, setLocationLat] = useState('');
+    const [locationLon, setLocationLon] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(false);
 
-const machineTypes = ['HVAC', 'Genset', 'Tractor', 'Pompa Air', 'Sprayer', 'Lahan', 'Others'];
+const machineTypes = ['HVAC', 'Generator', 'Tractor', 'Water Pump', 'Sprayer', 'Field', 'Others'];
 
 const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,9 +32,7 @@ const newMachine = {
     name,
     type,
     location_lat: locationLat ? parseFloat(locationLat) : null,
-    location_lon: locationLon ? parseFloat(locationLon) : null,
-    // created_at will be set by the backend (database default or Express logic)
-    // user_id will be added by the backend based on the authenticated user
+    location_lon: locationLon ? parseFloat(locationLon) : null
 };
 
 const response = await addMachine(newMachine);
@@ -63,14 +61,14 @@ catch (err) {
     return (
         <div className="min-h-screen bg-primary-bg p-6">
         <div className="max-w-2xl mx-auto bg-card-bg p-8 rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold text-text-dark mb-6 text-center">Add New Machines Status</h2>
+            <h2 className="text-green-500 text-2xl font-bold text-text-dark mb-6 text-center">Add New Machines</h2>
             <form onSubmit={handleSubmit}>
             <div className="mb-4">
                 <label className="block text-text-dark text-sm font-semibold mb-2" htmlFor="name">
-                Machine Name <span className="text-tani-red-500">*</span>
+                Machine Name <span className="text-red-500">*</span>
                 </label>
                 <input
-                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500"
+                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                 id="name"
                 type="text"
                 placeholder="Ex. tractor"
@@ -81,16 +79,16 @@ catch (err) {
             </div>
             <div className="mb-4">
                 <label className="block text-text-dark text-sm font-semibold mb-2" htmlFor="type">
-                Machines type <span className="text-tani-red-500">*</span>
+                Machines type <span className="text-red-500">*</span>
                 </label>
                 <select
-                className="shadow border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500"
+                className="shadow border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                 id="type"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
                 required
                 >
-                <option value="">-- Select Type --</option>
+                <option value=""> -- Select Type -- </option>
                 {machineTypes.map((mt) => (
                     <option key={mt} value={mt}>{mt}</option>
                 ))}
@@ -102,7 +100,7 @@ catch (err) {
                     Lat Location
                 </label>
                 <input
-                    className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500"
+                    className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                     id="locationLat"
                     type="text"
                     placeholder="Ex: -6.2088"
@@ -115,7 +113,7 @@ catch (err) {
                     Long Location
                 </label>
                 <input
-                    className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500"
+                    className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                     id="locationLon"
                     type="text"
                     placeholder="Ex: 106.8456"
@@ -133,21 +131,20 @@ catch (err) {
                 Tanggal Pembelian
                 </label>
                 <input
-                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-tani-green-500"
+                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                 id="purchaseDate"
                 type="date"
                 value={purchaseDate}
                 onChange={(e) => setPurchaseDate(e.target.value)}
                 />
             </div> */}
-
-
-            {error && <p className="text-tani-red-500 text-sm italic mb-4">{error}</p>}
-            {success && <p className="text-tani-green-500 text-sm italic mb-4">Machines Add Successfully!</p>}
+            
+            {error && <p className="text-red-500 text-sm italic mb-4">{error}</p>}
+            {success && <p className="text-green-500 text-sm italic mb-4">Machines Add Successfully!</p>}
 
             <div className="flex items-center justify-between">
                 <button
-                className="bg-tani-green-500 hover:bg-tani-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
                 >
@@ -156,7 +153,7 @@ catch (err) {
                 <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
+                className="bg-white hover:bg-white-400 text-black text-opacity-50 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                 >
                 Cancel
                 </button>
