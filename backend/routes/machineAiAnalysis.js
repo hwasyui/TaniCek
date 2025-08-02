@@ -15,14 +15,14 @@ router.get('/', async (req, res) => {
     const result = await aiAnalysisModel.aggregate([
       { $unwind: "$aiAnalysis" },
       { $match: { "aiAnalysis.machine_id": new mongoose.Types.ObjectId(machineId) } },
-      { $project: { _id: 0, aiAnalysis: 1 } }
+      { $project: { _id: 0, aiAnalysis: 1, createdAt: 1 } }
     ]);
 
     if (result.length === 0) {
       return res.status(404).json({ message: "Analysis not found" });
     }
 
-    return res.json(result[0].aiAnalysis);
+    return res.json(result); 
   } catch (error) {
     console.error("AI analysis for machine failed:", error);
     return res.status(500).json({ error: "Internal server error" });

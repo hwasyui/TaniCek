@@ -15,7 +15,7 @@ const userLogSchema = new mongoose.Schema({
         temp_max: { type: Number },           // in Kelvin by default
         pressure: { type: Number },           // ground level pressure, hPa
         cloudiness: { type: Number }          // % cloud coverage
-    }
+    },
 }, {timestamps: true});
 
 export default mongoose.model('UserLog', userLogSchema);
