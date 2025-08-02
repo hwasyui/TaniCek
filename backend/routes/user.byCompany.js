@@ -92,7 +92,7 @@ router.get('/', async (req, res) => {
 // GET /companies/:companyId/user/:userId
 router.get('/:userId', async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).populate("company_id");
+    const user = await User.findById(req.params.userId);
 
     if (!user) return res.status(404).json({ error: 'User not found' });
 

@@ -25,7 +25,7 @@ const SignIn = () => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         console.log("Login successful");
-        navigate('/dashboard'); // change this path if needed
+        navigate('/dashboard'); 
       } else {
         setError("Login failed: No token received");
       }

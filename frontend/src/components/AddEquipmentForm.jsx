@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { addMachine } from '../api'; 
 
 const AddEquipmentForm = ({ onClose, onSuccess }) => {
     const [name, setName] = useState('');

@@ -1,92 +1,82 @@
-<<<<<<< HEAD
-'use client';
-
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-
-const Dashboard = () => {
-  const [machines, setMachines] = useState([]);
-  const [company, setCompany] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user'));
-
-    if (!token || !user || !user.company) {
-      setError('No valid session found. Please log in.');
-      setLoading(false);
-      return;
-    }
-
-    const fetchData = async () => {
-      try {
-        const [companyRes, machinesRes] = await Promise.all([
-          axios.get(`http://localhost:3000/companies/${user.company}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`http://localhost:3000/machines/company/${user.company}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-=======
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
 import AddEquipmentForm from '../components/AddEquipmentForm';
 import LogActivityForm from '../components/LogActivityForm';
-import { checkAuthStatus, fetchAllMachinesWithForecasts } from '../api';
 
 const Dashboard = () => {
     const navigate = useNavigate();
-    const [userName, setUserName] = useState('Petani Cerdas');
+    const [companyInfo, setCompanyInfo] = useState(null);
+    const [userName, setUserName] = useState('');
     const [equipmentData, setEquipmentData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false); 
+    const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
     const [showLogActivityModal, setShowLogActivityModal] = useState(false);
     const [currentWeather, setCurrentWeather] = useState(null);
+
+    useEffect(() => {
+        const initDashboard = async () => {
+            const storedUser = localStorage.getItem('user');
+            const token = localStorage.getItem('token');
+
+            if (!storedUser || !token) {
+                navigate('/login');
+                return;
+            }
+
+            const user = JSON.parse(storedUser);
+            const userId = user.id;
+            const companyId = user.company;
+
+            try {
+                const [userRes, companyRes, equipmentRes] = await Promise.all([
+                    fetch(`http://localhost:3000/companies/${companyId}/user/${userId}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    fetch(`http://localhost:3000/companies/${companyId}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    fetch(`http://localhost:3000/companies/${companyId}/machines`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                ]);
+
+                const userJson = await userRes.json();
+                const companyJson = await companyRes.json();
+                const equipmentJson = await equipmentRes.json();
+                console.log("Full user response:", userJson);
+                console.log("Full company response:", companyJson);
+                console.log("Full equipment response:", equipmentJson);
+
+                if (!userRes.ok) throw new Error(userJson.message || 'Failed to fetch user');
+                if (!companyRes.ok) throw new Error(companyJson.message || 'Failed to fetch company info');
+                if (!equipmentRes.ok) throw new Error(equipmentJson.message || 'Failed to fetch equipment data');
+
+                setUserName(userJson.data.name);
+                setCompanyInfo(companyJson.data);
+                setEquipmentData(equipmentJson);
+                console.log('Parsed User name:', userJson.data.name);
+                console.log('Parsed Company info:', companyJson.data);
+                console.log('Parsed equipment:', equipmentJson);
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initDashboard();
+    }, []);
 
     // useCallback to memoize the function and prevent unnecessary re-renders
     const loadDashboardData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            // --- AUTH CHECK ---
-            // Implement your actual Express API call to check authentication status.
-            // const authResponse = await checkAuthStatus();
-            // if (!authResponse.isAuthenticated) {
-            //    navigate('/login');
-            //    return;
-            // }
-            // setUserName(authResponse.user.name || authResponse.user.email.split('@')[0]);
-
-            // --- FETCH EQUIPMENT DATA WITH FORECASTS ---
-            // const machinesResponse = await fetchAllMachinesWithForecasts();
-            // if (!machinesResponse.success) {
-            //    throw new Error(machinesResponse.message || 'Gagal memuat data alat.');
-            // }
-            // setEquipmentData(machinesResponse.data);
-
-            // --- SIMULATED DATA FOR DEVELOPMENT ---
             setTimeout(() => {
-                const dummyAuthUser = { name: 'Ali', email: 'ali@gmail.com' };
-                setUserName(dummyAuthUser.name || dummyAuthUser.email.split('@')[0]);
-                const dummyData = [
-                    { id: 'machine-1', name: 'Generator', type: 'Generator', location_lat: 1.0, location_lon: 104.0, lastLogDate: '2025-07-26', forecast: { is_dangerous: false, level: 'Low', reason: 'Normal condition' } },
-                    { id: 'machine-2', name: 'Irrigation Pump A', type: 'Water Pump', location_lat: 1.1, location_lon: 104.1, lastLogDate: '2025-07-27', forecast: { is_dangerous: true, level: 'High', reason: 'Abnormal vibration levels, indicating worn bearings. Immediate inspection required' } },
-                    { id: 'machine-3', name: 'tractor', type: 'tractor', location_lat: 1.2, location_lon: 104.2, lastLogDate: '2025-07-25', forecast: { is_dangerous: false, level: 'Low', reason: 'Optimal Condition' } },
-                    { id: 'machine-4', name: 'HVAC Storage Warehouse', type: 'HVAC', location_lat: 1.3, location_lon: 104.3, lastLogDate: '2025-07-27', forecast: { is_dangerous: false, level: 'Low', reason: 'Stable temperature, humidity maintained' } },
-                    { id: 'machine-5', name: 'Rice Threshing Machine', type: 'Others', location_lat: 1.4, location_lon: 104.4, lastLogDate: '2025-07-27', forecast: { is_dangerous: true, level: 'High', reason: 'There is an unusual noise from the transmission, and the brake pads are severely worn' } },
-                    { id: 'machine-6', name: 'Automatic Sprayer', type: 'Sprayer', location_lat: 1.5, location_lon: 104.5, lastLogDate: '2025-07-26', forecast: { is_dangerous: false, level: 'Low', reason: 'Normal pressure, no leaks' } },
-                    { id: 'machine-7', name: 'Field', type: 'Field', location_lat: 1.6, location_lon: 104.6, lastLogDate: '2025-07-26', forecast: { is_dangerous: false, level: 'Low', reason: 'Good soil and nutrient conditions' } },
-                    { id: 'machine-8', name: 'Deep Well Water Pump', type: 'Water Pump', location_lat: 1.7, location_lon: 104.7, lastLogDate: '2025-07-27', forecast: { is_dangerous: false, level: 'Low', reason: 'Water flow is stable.' } },
-                    { id: 'machine-9', name: 'Harvest Drying Machine', type: 'Others', location_lat: 1.8, location_lon: 104.8, lastLogDate: '2025-07-27', forecast: { is_dangerous: true, level: 'Medium', reason: 'Dirty air filter, efficiency decreasing. Needs replacement' } },
-                ];
-                setEquipmentData(dummyData);
-
                 setCurrentWeather({
                     location: 'Cikarang, Indonesia',
                     temperature: 32,
@@ -97,7 +87,6 @@ const Dashboard = () => {
                     prediction: 'The weather is sunny and humid, with a chance of light rain in the afternoon. There is no significant impact on the equipment',
                     icon: '☀️'
                 });
-
                 setLoading(false);
             }, 1000);
         } catch (err) {
@@ -105,11 +94,11 @@ const Dashboard = () => {
             setError(err.message || 'Failed to load dashboard data');
             setLoading(false);
         }
-    }, [navigate]); 
+    }, [navigate]);
 
     useEffect(() => {
         loadDashboardData();
-    }, [loadDashboardData]); 
+    }, [loadDashboardData]);
 
     const handleLogout = async () => {
         navigate('/login');
@@ -128,7 +117,7 @@ const Dashboard = () => {
     const statusCounts = getStatusCounts();
 
     const handleFormSuccess = () => {
-        loadDashboardData(); 
+        loadDashboardData();
         setShowAddEquipmentModal(false);
         setShowLogActivityModal(false);
     };
@@ -150,80 +139,8 @@ const Dashboard = () => {
             </div>
         );
     }
->>>>>>> 243de18a4bc64ff815d1420fdff7303aa94ac670
 
-        setCompany(companyRes.data);
-        setMachines(machinesRes.data);
-      } catch (err) {
-        console.error(err);
-        setError(err.response?.data?.message || 'Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
     return (
-<<<<<<< HEAD
-      <div className="flex justify-center items-center h-screen bg-white">
-        <p className="text-gray-500 text-lg">Loading dashboard...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-white">
-        <p className="text-red-600 font-semibold">{error}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-green-700">
-            Welcome to {company?.name}'s Dashboard
-          </h1>
-          {company?.image && (
-            <img
-              src={company.image}
-              alt={`${company.name} Logo`}
-              className="w-40 h-40 mx-auto mt-4 object-contain rounded-lg shadow"
-            />
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {machines.length === 0 ? (
-            <div className="col-span-full text-center text-gray-600">
-              No machines found for this company.
-            </div>
-          ) : (
-            machines.map((machine) => (
-              <div
-                key={machine._id}
-                className="bg-white p-5 rounded-xl shadow hover:shadow-lg transition"
-              >
-                <h2 className="text-xl font-semibold text-gray-800">{machine.name}</h2>
-                <p className="text-sm text-gray-600 mt-1">Type: {machine.type}</p>
-                <p className="text-sm text-gray-600">Location: {machine.location}</p>
-                <p className="text-sm text-gray-600">Status: {machine.status}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Dashboard;
-=======
         <div className="min-h-screen bg-primary-bg dark:bg-dark-primary-bg flex flex-col text-text-dark dark:text-text-light">
             {/* Top Navigation Bar */}
             <nav className="bg-card-bg dark:bg-dark-card-bg shadow-sm p-4 flex justify-between items-center">
@@ -325,7 +242,7 @@ export default Dashboard;
                     <h3 className="text-xl font-semibold text-text-dark dark:text-text-light mb-4">Machine Status & Prediction</h3>
                     <div className="mb-4 flex flex-wrap gap-3">
                         <button
-                            onClick={() => setShowAddEquipmentModal(true)} 
+                            onClick={() => setShowAddEquipmentModal(true)}
                             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -368,7 +285,7 @@ export default Dashboard;
                     </div>
                 </div>
             )}
-            
+
             {/* to show log activity modal */}
             {showLogActivityModal && (
                 <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
@@ -385,7 +302,7 @@ export default Dashboard;
                         <LogActivityForm
                             onClose={() => setShowLogActivityModal(false)}
                             onSuccess={handleFormSuccess}
-                            machines={equipmentData.map(eq => ({ id: eq.id, name: eq.name }))} 
+                            machines={equipmentData.map(eq => ({ id: eq.id, name: eq.name }))}
                         />
                     </div>
                 </div>
@@ -395,4 +312,3 @@ export default Dashboard;
 };
 
 export default Dashboard;
->>>>>>> 243de18a4bc64ff815d1420fdff7303aa94ac670

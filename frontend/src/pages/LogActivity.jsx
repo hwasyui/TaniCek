@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchAllMachines, addLog } from '../api';
 
-const LogActivity = () => {
-const navigate = useNavigate();
 const LogActivity = () => {
 const navigate = useNavigate();
     const [machines, setMachines] = useState([]);
@@ -94,15 +91,12 @@ const navigate = useNavigate();
         <div className="min-h-screen bg-primary-bg p-6">
         <div className="max-w-2xl mx-auto bg-card-bg p-8 rounded-lg shadow-lg">
             <h2 className="text-green-500 text-2xl font-bold text-text-dark mb-6 text-center">Add Operator Daily Log</h2>
-            <h2 className="text-green-500 text-2xl font-bold text-text-dark mb-6 text-center">Add Operator Daily Log</h2>
             <form onSubmit={handleSubmit}>
             <div className="mb-4">
                 <label className="block text-text-dark text-sm font-semibold mb-2" htmlFor="machineSelect">
                 Select Machine <span className="text-red-500">*</span>
-                Select Machine <span className="text-red-500">*</span>
                 </label>
                 <select
-                className="shadow border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                 className="shadow border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500"
                 id="machineSelect"
                 value={selectedMachineId}
@@ -120,13 +114,10 @@ const navigate = useNavigate();
             <div className="mb-4">
                 <label className="block text-text-dark text-sm font-semibold mb-2" htmlFor="note">
                 Log Notes <span className="text-red-500">*</span>
-                Log Notes <span className="text-red-500">*</span>
                 </label>
                 <textarea
                 className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 h-32"
-                className="shadow appearance-none border border-border-light rounded w-full py-2 px-3 text-text-dark leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 h-32"
                 id="note"
-                placeholder="enter your log notes here..."
                 placeholder="enter your log notes here..."
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -157,7 +148,6 @@ const navigate = useNavigate();
             <div className="flex items-center justify-between">
                 <button
                 className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
-                className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
                 type="submit"
                 disabled={loading}
                 >
@@ -166,7 +156,6 @@ const navigate = useNavigate();
                 <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="bg-gray-300 hover:bg-gray-400 text-black text-opacity-50 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                 className="bg-gray-300 hover:bg-gray-400 text-black text-opacity-50 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                 >
                 Cancel

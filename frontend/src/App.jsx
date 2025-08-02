@@ -4,7 +4,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import SignIn from './pages/Auth/SignIn';
 import Signup from './pages/Auth/Signup';
 import Dashboard from './pages/Dashboard';
-import { checkAuthStatus } from './api';
 
 const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
