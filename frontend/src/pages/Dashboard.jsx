@@ -17,59 +17,92 @@ const Dashboard = () => {
     const [currentWeather, setCurrentWeather] = useState(null);
 
     useEffect(() => {
-        const initDashboard = async () => {
-            const storedUser = localStorage.getItem('user');
-            const token = localStorage.getItem('token');
+    const initDashboard = async () => {
+        const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
 
-            if (!storedUser || !token) {
-                navigate('/login');
-                return;
-            }
+        if (!storedUser || !token) {
+            navigate('/login');
+            return;
+        }
 
-            const user = JSON.parse(storedUser);
-            const userId = user.id;
-            const companyId = user.company;
+        const user = JSON.parse(storedUser);
+        const userId = user.id;
+        const companyId = user.company;
 
-            try {
-                const [userRes, companyRes, equipmentRes] = await Promise.all([
-                    fetch(`http://localhost:3000/companies/${companyId}/user/${userId}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                    fetch(`http://localhost:3000/companies/${companyId}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                    fetch(`http://localhost:3000/companies/${companyId}/machines`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                ]);
+        try {
+            const [userRes, companyRes, equipmentRes] = await Promise.all([
+                fetch(`http://localhost:3000/companies/${companyId}/user/${userId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                fetch(`http://localhost:3000/companies/${companyId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                fetch(`http://localhost:3000/companies/${companyId}/machines`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+            ]);
 
-                const userJson = await userRes.json();
-                const companyJson = await companyRes.json();
-                const equipmentJson = await equipmentRes.json();
-                console.log("Full user response:", userJson);
-                console.log("Full company response:", companyJson);
-                console.log("Full equipment response:", equipmentJson);
+            const userJson = await userRes.json();
+            const companyJson = await companyRes.json();
+            const machines = await equipmentRes.json();
 
-                if (!userRes.ok) throw new Error(userJson.message || 'Failed to fetch user');
-                if (!companyRes.ok) throw new Error(companyJson.message || 'Failed to fetch company info');
-                if (!equipmentRes.ok) throw new Error(equipmentJson.message || 'Failed to fetch equipment data');
+            if (!userRes.ok) throw new Error(userJson.message || 'Failed to fetch user');
+            if (!companyRes.ok) throw new Error(companyJson.message || 'Failed to fetch company info');
+            if (!equipmentRes.ok) throw new Error(machines.message || 'Failed to fetch equipment data');
 
-                setUserName(userJson.data.name);
-                setCompanyInfo(companyJson.data);
-                setEquipmentData(equipmentJson);
-                console.log('Parsed User name:', userJson.data.name);
-                console.log('Parsed Company info:', companyJson.data);
-                console.log('Parsed equipment:', equipmentJson);
-            } catch (err) {
-                console.error(err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
+            setUserName(userJson.data.name);
+            setCompanyInfo(companyJson.data);
 
-        initDashboard();
-    }, []);
+            // Enrich each machine with AI forecast and latest log
+            const enrichedMachines = await Promise.all(
+                machines.map(async (machine) => {
+                    try {
+                        const [aiRes, logRes] = await Promise.all([
+                            fetch(`http://localhost:3000/companies/${companyId}/machines/${machine._id}/ai-analysis`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                            }),
+                            fetch(`http://localhost:3000/companies/${companyId}/machines/${machine._id}/logs`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                            }),
+                        ]);
+
+                        const aiData = await aiRes.json();
+                        const logsData = await logRes.json();
+
+                        const latestAnalysis = Array.isArray(aiData) 
+                            ? aiData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+                            : null;
+
+                        const latestLog = Array.isArray(logsData) 
+                            ? logsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
+                            : null;
+
+                        return {
+                            ...machine,
+                            forecast: latestAnalysis?.aiAnalysis || null,
+                            latestLog: latestLog || null,
+                        };
+                    } catch (err) {
+                        console.error(`Error fetching extra info for machine ${machine._id}`, err);
+                        return machine;
+                    }
+                })
+            );
+
+            setEquipmentData(enrichedMachines);
+            console.log('Enriched Machines Data:', enrichedMachines);
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    initDashboard();
+}, []);
+
 
     // useCallback to memoize the function and prevent unnecessary re-renders
     const loadDashboardData = useCallback(async () => {
@@ -105,14 +138,18 @@ const Dashboard = () => {
     };
 
     const getStatusCounts = () => {
-        const counts = { High: 0, Medium: 0, Low: 0 };
-        equipmentData.forEach(item => {
-            if (item.forecast && item.forecast.level) {
-                counts[item.forecast.level]++;
-            }
-        });
-        return counts;
-    };
+    const counts = { High: 0, Medium: 0, Low: 0 };
+    equipmentData.forEach(item => {
+        if (item.forecast?.level) {
+            const level = item.forecast.level.toLowerCase();
+            if (level === 'high') counts.High++;
+            else if (level === 'medium') counts.Medium++;
+            else if (level === 'low') counts.Low++;
+        }
+    });
+    return counts;
+};
+
 
     const statusCounts = getStatusCounts();
 
