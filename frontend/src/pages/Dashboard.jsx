@@ -4,6 +4,7 @@ import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
 import AddEquipmentForm from '../components/AddEquipmentForm';
 import LogActivityForm from '../components/LogActivityForm';
+import User from '../../../backend/models/user.model';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -329,6 +330,7 @@ const Dashboard = () => {
                 <div className="md:col-span-3 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
                     <h3 className="text-xl font-semibold text-text-dark dark:text-text-light mb-4">Machine Status & Prediction</h3>
                     <div className="mb-4 flex flex-wrap gap-3">
+                       {User?.isAdmin && (
                         <button
                             onClick={() => setShowAddEquipmentModal(true)}
                             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
@@ -338,6 +340,7 @@ const Dashboard = () => {
                             </svg>
                             <span>Add New Machines</span>
                         </button>
+                        )}
                         <button
                             onClick={() => setShowLogActivityModal(true)}
                             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
