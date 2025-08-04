@@ -15,6 +15,29 @@ const Dashboard = () => {
     const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
     const [showLogActivityModal, setShowLogActivityModal] = useState(false);
     const [currentWeather, setCurrentWeather] = useState(null);
+    const [location, setLocation] = useState({ latitude: null, longitude: null, error: null });
+
+    // Get user location on component mount
+    useEffect(() => {
+        if (!navigator.geolocation) {
+            setLocation(loc => ({ ...loc, error: 'Geolocation is not supported by your browser' }));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setLocation({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    error: null,
+                });
+            },
+            (err) => {
+                setLocation(loc => ({ ...loc, error: err.message }));
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }, []);
 
     const fetchDashboardData = useCallback(async () => {
         const storedUser = localStorage.getItem('user');
@@ -193,6 +216,15 @@ const Dashboard = () => {
                 </div>
             </nav>
 
+            {/* Show user location if available */}
+            <div className="p-4 bg-green-100 text-green-900 text-center">
+                {location.error && <p>Location error: {location.error}</p>}
+                {location.latitude && location.longitude && (
+                    <p>Your location: Lat {location.latitude.toFixed(4)}, Lon {location.longitude.toFixed(4)}</p>
+                )}
+                {!location.latitude && !location.longitude && !location.error && <p>Obtaining your location...</p>}
+            </div>
+
             {/* Main Content Area */}
             <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
 
@@ -324,7 +356,10 @@ const Dashboard = () => {
                             onClose={() => setShowLogActivityModal(false)}
                             onSuccess={handleFormSuccess}
                             machines={equipmentData.map(eq => ({ id: eq._id, name: eq.name }))}
+                            latitude={location.latitude}
+                            longitude={location.longitude}
                         />
+
                     </div>
                 </div>
             )}

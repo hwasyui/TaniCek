@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import UserLog from '../models/userlog.model.js';
 import Machine from '../models/machine.model.js';
 import { fetchWeather } from '../utils/weather.js';
+
 export const createUserLog = async (req, res) => {
   console.log('=== BACKEND DEBUG LOG START ===');
   console.log('Req Params:', req.params);
@@ -10,11 +11,16 @@ export const createUserLog = async (req, res) => {
   console.log('Req User:', req.user);
 
   try {
-    const { note } = req.body;
+    const { note, location_lat, location_lon } = req.body;
     const { machineId } = req.params;
 
     console.log('Note:', note);
     console.log('Machine ID:', machineId);
+    console.log('Location lat/lon:', location_lat, location_lon);
+
+    if (location_lat == null || location_lon == null) {
+      return res.status(400).json({ error: 'Location coordinates are required.' });
+    }
 
     const machine = await Machine.findById(machineId);
     console.log('Machine Found:', machine);
@@ -27,9 +33,9 @@ export const createUserLog = async (req, res) => {
     let weather = {};
     const apiKey = process.env.OPENWEATHER_API_KEY;
 
-    if (machine.location_lat && machine.location_lon) {
+    if (location_lat && location_lon) {
       try {
-        weather = await fetchWeather(machine.location_lat, machine.location_lon, apiKey);
+        weather = await fetchWeather(location_lat, location_lon, apiKey);
         console.log('Weather fetched:', weather);
       } catch (weatherErr) {
         console.error('Weather fetch error:', weatherErr.message);
@@ -45,6 +51,8 @@ export const createUserLog = async (req, res) => {
       user: req.user?._id || 'NO USER',
       note,
       weather,
+      location_lat,
+      location_lon,
     });
     console.log('Log created:', log);
 

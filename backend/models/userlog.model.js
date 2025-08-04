@@ -16,6 +16,14 @@ const userLogSchema = new mongoose.Schema({
         pressure: { type: Number },           // ground level pressure, hPa
         cloudiness: { type: Number }          // % cloud coverage
     },
+    location_lat: { 
+        type: Number,
+        required: true
+    },
+    location_lon: { 
+        type: Number,
+        required: true
+    },
 }, {timestamps: true});
 
 export default mongoose.model('UserLog', userLogSchema);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const LogActivityForm = ({ onClose, onSuccess, machines }) => {
+const LogActivityForm = ({ onClose, onSuccess, machines, latitude, longitude }) => {
     const [selectedMachineId, setSelectedMachineId] = useState('');
     const [note, setNote] = useState('');
     const [loading, setLoading] = useState(false);
@@ -16,6 +16,10 @@ const LogActivityForm = ({ onClose, onSuccess, machines }) => {
                 throw new Error('Please select a machine and fill in the notes.');
             }
 
+            if (latitude == null || longitude == null) {
+                throw new Error('Location data is missing. Please allow location access.');
+            }
+
             const storedUser = localStorage.getItem('user');
             const token = localStorage.getItem('token');
 
@@ -26,7 +30,11 @@ const LogActivityForm = ({ onClose, onSuccess, machines }) => {
             const user = JSON.parse(storedUser);
             const companyId = user.company;
 
-            const logData = { note };
+            const logData = {
+                note,
+                location_lat: latitude,
+                location_lon: longitude,
+            };
 
             const response = await fetch(
                 `http://localhost:3000/companies/${companyId}/machines/${selectedMachineId}/logs`,
@@ -79,7 +87,7 @@ const LogActivityForm = ({ onClose, onSuccess, machines }) => {
                         <option value="">-- Select Machine --</option>
                         {machines.map((machine, index) => (
                             <option key={machine.id || index} value={machine.id}>
-                                {machine.name} ({machine.id}) {/* Show the ID to confirm */}
+                                {machine.name} ({machine.id})
                             </option>
                         ))}
                     </select>
@@ -109,7 +117,8 @@ const LogActivityForm = ({ onClose, onSuccess, machines }) => {
                     <button
                         className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline disabled:opacity-50 disabled:cursor-not-allowed"
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || latitude == null || longitude == null}
+                        title={latitude == null || longitude == null ? 'Waiting for location...' : ''}
                     >
                         {loading ? 'Loading...' : 'Save'}
                     </button>
