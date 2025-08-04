@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,6 +23,16 @@ const SignIn = () => {
       });
   };
 
+  const stopWebcam = () => {
+    const video = videoRef.current;
+    if (video && video.srcObject) {
+      const stream = video.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => track.stop());
+      video.srcObject = null;
+    }
+  };
+
   const captureAndVerifyFace = async () => {
     const video = videoRef.current;
     const canvas = document.createElement('canvas');
@@ -39,7 +50,16 @@ const SignIn = () => {
       if (res.data.verified) {
         setFaceVerified(true);
         console.log("Face verified");
-        navigate("/dashboard");
+        stopWebcam();
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+
+        if (!storedUser.isAdmin && !storedUser.isDeveloper) {
+          navigate("/dashboard");
+        } else if (storedUser.isAdmin && !storedUser.isDeveloper) {
+          navigate("/AdminDashboard");
+        } else {
+          navigate("/DeveloperDashboard");
+        }
       } else {
         setError("Face not matched. Access denied.");
       }
@@ -62,14 +82,15 @@ const SignIn = () => {
 
       const { token, user } = response.data;
 
-      if (token) {
+      if (token && user) {
         localStorage.setItem('token', token);
         setAuthToken(token);
         localStorage.setItem('user', JSON.stringify(user));
         console.log("Login successful");
+
         startWebcam();
       } else {
-        setError("Login failed: No token received");
+        setError("Login failed: Invalid response");
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -78,7 +99,6 @@ const SignIn = () => {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary-bg">

@@ -3,21 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SignIn from './pages/Auth/SignIn';
 import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import DeveloperDashboard from './pages/DeveloperDashboard';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, roles }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const verifyAuth = async () => {
-      // --- AUTH CHECK: Call your Express backend to verify authentication ---
-      // This function in src/api.js would make an API call to your backend
-      // and typically receive a response like { isAuthenticated: true, user: { ... } }
-      // const authResponse = await checkAuthStatus();
-      // setIsAuthenticated(authResponse.isAuthenticated);
+      const token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
 
-      setTimeout(() => {
-        setIsAuthenticated(true);
-      }, 500);
+      if (!token || !storedUser) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      setUser(JSON.parse(storedUser));
+      setIsAuthenticated(true);
     };
 
     verifyAuth();
@@ -26,15 +30,27 @@ const ProtectedRoute = ({ children }) => {
   if (isAuthenticated === null) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-primary-bg dark:bg-dark-primary-bg">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tani-green-500"></div> {/* Use tani-green-500 */}
-        <p className="ml-4 text-text-dark dark:text-text-light">Loading...</p> {/* Use text-dark/light */}
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-tani-green-500"></div>
+        <p className="ml-4 text-text-dark dark:text-text-light">Loading...</p>
       </div>
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login"/>
-};
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  if (roles && user) {
+    const { isAdmin, isDeveloper } = user;
 
+    if (roles.includes('admin') && isAdmin) return children;
+    if (roles.includes('developer') && isDeveloper) return children;
+    if (roles.includes('user') && !isAdmin && !isDeveloper) return children;
+
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+};
 
 function App() {
   return (
@@ -47,25 +63,32 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['user']}>
               <Dashboard />
             </ProtectedRoute>
           }
         />
 
-        {/* You'll add more protected routes as you build out */}
-        {/* <Route
-          path="/activity-history"
+        <Route
+          path="/AdminDashboard"
           element={
-            <ProtectedRoute>
-              <ActivityHistory />
+            <ProtectedRoute roles={['admin']}>
+              <AdminDashboard />
             </ProtectedRoute>
           }
-        /> */}
+        />
 
-        {/* Default route to redirect to dashboard if authenticated, or login otherwise */}
-        {/* Note: This assumes your ProtectedRoute handles the initial auth check */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/DeveloperDashboard"
+          element={
+            <ProtectedRoute roles={['developer']}>
+              <DeveloperDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Default route */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );
