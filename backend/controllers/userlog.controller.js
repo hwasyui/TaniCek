@@ -3,14 +3,24 @@ import mongoose from 'mongoose';
 import UserLog from '../models/userlog.model.js';
 import Machine from '../models/machine.model.js';
 import { fetchWeather } from '../utils/weather.js';
-
 export const createUserLog = async (req, res) => {
+  console.log('=== BACKEND DEBUG LOG START ===');
+  console.log('Req Params:', req.params);
+  console.log('Req Body:', req.body);
+  console.log('Req User:', req.user);
+
   try {
     const { note } = req.body;
     const { machineId } = req.params;
 
+    console.log('Note:', note);
+    console.log('Machine ID:', machineId);
+
     const machine = await Machine.findById(machineId);
+    console.log('Machine Found:', machine);
+
     if (!machine) {
+      console.error('Machine not found');
       return res.status(404).json({ error: 'Machine not found' });
     }
 
@@ -20,30 +30,36 @@ export const createUserLog = async (req, res) => {
     if (machine.location_lat && machine.location_lon) {
       try {
         weather = await fetchWeather(machine.location_lat, machine.location_lon, apiKey);
+        console.log('Weather fetched:', weather);
       } catch (weatherErr) {
         console.error('Weather fetch error:', weatherErr.message);
         weather = { description: 'Failed to fetch weather' };
       }
     } else {
       weather = { description: 'No coordinates provided' };
+      console.log('Weather:', weather);
     }
 
     const log = await UserLog.create({
       machine: machineId,
-      user: req.user._id,
+      user: req.user?._id || 'NO USER',
       note,
-      weather
+      weather,
     });
+    console.log('Log created:', log);
 
     await Machine.findByIdAndUpdate(machineId, {
-      $push: { userLogs: log._id }
+      $push: { userLogs: log._id },
     });
+    console.log('Machine log updated with new log ID');
 
+    console.log('=== BACKEND DEBUG LOG END ===');
     res.status(201).json({
       message: 'User log created successfully',
-      data: log
+      data: log,
     });
   } catch (error) {
+    console.error('Backend Error:', error.message);
     res.status(500).json({ message: 'Create log failed', error: error.message });
   }
 };

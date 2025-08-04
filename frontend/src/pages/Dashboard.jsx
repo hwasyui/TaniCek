@@ -16,8 +16,7 @@ const Dashboard = () => {
     const [showLogActivityModal, setShowLogActivityModal] = useState(false);
     const [currentWeather, setCurrentWeather] = useState(null);
 
-    useEffect(() => {
-    const initDashboard = async () => {
+    const fetchDashboardData = useCallback(async () => {
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
 
@@ -29,6 +28,9 @@ const Dashboard = () => {
         const user = JSON.parse(storedUser);
         const userId = user.id;
         const companyId = user.company;
+
+        setLoading(true);
+        setError(null);
 
         try {
             const [userRes, companyRes, equipmentRes] = await Promise.all([
@@ -54,7 +56,6 @@ const Dashboard = () => {
             setUserName(userJson.data.name);
             setCompanyInfo(companyJson.data);
 
-            // Enrich each machine with AI forecast and latest log
             const enrichedMachines = await Promise.all(
                 machines.map(async (machine) => {
                     try {
@@ -70,11 +71,11 @@ const Dashboard = () => {
                         const aiData = await aiRes.json();
                         const logsData = await logRes.json();
 
-                        const latestAnalysis = Array.isArray(aiData) 
+                        const latestAnalysis = Array.isArray(aiData)
                             ? aiData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
                             : null;
 
-                        const latestLog = Array.isArray(logsData) 
+                        const latestLog = Array.isArray(logsData)
                             ? logsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
                             : null;
 
@@ -91,73 +92,56 @@ const Dashboard = () => {
             );
 
             setEquipmentData(enrichedMachines);
-            console.log('Enriched Machines Data:', enrichedMachines);
+
+            setCurrentWeather({
+                location: 'Cikarang, Indonesia',
+                temperature: 32,
+                condition: 'Sunny',
+                humidity: 63,
+                windSpeed: 8,
+                aqi: 3,
+                prediction: 'The weather is sunny and humid, with a chance of light rain in the afternoon. No significant impact on equipment.',
+                icon: '☀️'
+            });
+
+            console.log('Dashboard refreshed!', enrichedMachines);
+
         } catch (err) {
             console.error(err);
             setError(err.message);
         } finally {
             setLoading(false);
         }
-    };
-
-    initDashboard();
-}, []);
-
-
-    // useCallback to memoize the function and prevent unnecessary re-renders
-    const loadDashboardData = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            setTimeout(() => {
-                setCurrentWeather({
-                    location: 'Cikarang, Indonesia',
-                    temperature: 32,
-                    condition: 'Sunny',
-                    humidity: 63,
-                    windSpeed: 8,
-                    aqi: 3, // AQI 1-5
-                    prediction: 'The weather is sunny and humid, with a chance of light rain in the afternoon. There is no significant impact on the equipment',
-                    icon: '☀️'
-                });
-                setLoading(false);
-            }, 1000);
-        } catch (err) {
-            console.error('Error loading dashboard data:', err);
-            setError(err.message || 'Failed to load dashboard data');
-            setLoading(false);
-        }
     }, [navigate]);
 
     useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    const handleFormSuccess = () => {
+        fetchDashboardData();
+        setShowAddEquipmentModal(false);
+        setShowLogActivityModal(false);
+    };
+
 
     const handleLogout = async () => {
         navigate('/login');
     };
 
     const getStatusCounts = () => {
-    const counts = { High: 0, Medium: 0, Low: 0 };
-    equipmentData.forEach(item => {
-        if (item.forecast?.level) {
-            const level = item.forecast.level.toLowerCase();
-            if (level === 'high') counts.High++;
-            else if (level === 'medium') counts.Medium++;
-            else if (level === 'low') counts.Low++;
-        }
-    });
-    return counts;
-};
-
-
-    const statusCounts = getStatusCounts();
-
-    const handleFormSuccess = () => {
-        loadDashboardData();
-        setShowAddEquipmentModal(false);
-        setShowLogActivityModal(false);
+        const counts = { High: 0, Medium: 0, Low: 0 };
+        equipmentData.forEach(item => {
+            if (item.forecast?.level) {
+                const level = item.forecast.level.toLowerCase();
+                if (level === 'high') counts.High++;
+                else if (level === 'medium') counts.Medium++;
+                else if (level === 'low') counts.Low++;
+            }
+        });
+        return counts;
     };
+    const statusCounts = getStatusCounts();
 
     if (loading) {
         return (
@@ -339,7 +323,7 @@ const Dashboard = () => {
                         <LogActivityForm
                             onClose={() => setShowLogActivityModal(false)}
                             onSuccess={handleFormSuccess}
-                            machines={equipmentData.map(eq => ({ id: eq.id, name: eq.name }))}
+                            machines={equipmentData.map(eq => ({ id: eq._id, name: eq.name }))}
                         />
                     </div>
                 </div>
