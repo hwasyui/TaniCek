@@ -70,6 +70,7 @@ const LogActivityForm = ({ onClose, onSuccess, machines, latitude, longitude }) 
                 Add Daily Log
             </h2>
             <form onSubmit={handleSubmit}>
+
                 {/* Machine Selection */}
                 <div className="mb-4">
                     <label
@@ -79,6 +80,7 @@ const LogActivityForm = ({ onClose, onSuccess, machines, latitude, longitude }) 
                         Select Machine <span className="text-red-500">*</span>
                     </label>
                     <select
+                        className="shadow appearance-none border border-border-light dark:border-dark-border-light rounded w-full py-2 px-3 text-text-dark dark:text-text-light leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 bg-white dark:bg-white"
                         id="machineSelect"
                         value={selectedMachineId}
                         onChange={(e) => setSelectedMachineId(e.target.value)}
@@ -127,7 +129,7 @@ const LogActivityForm = ({ onClose, onSuccess, machines, latitude, longitude }) 
                         onClick={onClose}
                         className="bg-gray-300 hover:bg-gray-400 text-black text-opacity-50 font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                     >
-                        Cancel
+                    Cancel
                     </button>
                 </div>
             </form>

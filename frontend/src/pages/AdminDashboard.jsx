@@ -2,9 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
-import AddEquipmentForm from '../components/AddEquipmentForm';
+import ProfileDetailsModal from '../components/ProfileDetailsModal';
 import LogActivityForm from '../components/LogActivityForm';
-
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -261,7 +260,7 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Card 1: Machine Status Summary */}
                 <div className="md:col-span-1 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
