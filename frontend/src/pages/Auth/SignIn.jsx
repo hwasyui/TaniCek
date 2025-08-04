@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 const SignIn = () => {
@@ -7,8 +7,49 @@ const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const [faceVerified, setFaceVerified] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
 
-   const handleLogin = async (e) => {
+  const startWebcam = () => {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }).catch((err) => {
+        console.error("Webcam error:", err);
+      });
+  };
+
+  const captureAndVerifyFace = async () => {
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    const base64Image = canvas.toDataURL('image/jpeg');
+
+    try {
+      const res = await axios.post("http://localhost:5000/face-verify", {
+        email,
+        webcam: base64Image
+      });
+
+      if (res.data.verified) {
+        setFaceVerified(true);
+        console.log("Face verified");
+        navigate("/dashboard");
+      } else {
+        setError("Face not matched. Access denied.");
+      }
+    } catch (err) {
+      console.error("Face verification failed:", err);
+      setError("Face verification error.");
+    }
+  };
+
+  const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -23,9 +64,10 @@ const SignIn = () => {
 
       if (token) {
         localStorage.setItem('token', token);
+        setAuthToken(token);
         localStorage.setItem('user', JSON.stringify(user));
         console.log("Login successful");
-        navigate('/dashboard'); 
+        startWebcam();
       } else {
         setError("Login failed: No token received");
       }
@@ -87,6 +129,28 @@ const SignIn = () => {
             <Link to="#" className="hover:underline">Forgot Password?</Link>
           </p>
         </form>
+        {authToken && !faceVerified && (
+          <div className="mt-8 text-center">
+            <h3 className="text-lg text-text-dark font-semibold mb-2">Verifying Face...</h3>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              width="320"
+              height="240"
+              className="mx-auto rounded border"
+            />
+            <button
+              onClick={captureAndVerifyFace}
+              className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Verify Face
+            </button>
+          </div>
+        )}
+        {faceVerified && (
+          <p className="text-green-500 text-center mt-4">Face verified successfully!</p>
+        )}
       </div>
     </div>
   );
