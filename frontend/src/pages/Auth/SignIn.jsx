@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -11,6 +11,8 @@ const SignIn = () => {
   const videoRef = useRef(null);
   const [faceVerified, setFaceVerified] = useState(false);
   const [authToken, setAuthToken] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   const startWebcam = () => {
     navigator.mediaDevices.getUserMedia({ video: true })
@@ -35,6 +37,8 @@ const SignIn = () => {
 
   const captureAndVerifyFace = async () => {
     const video = videoRef.current;
+    if (!video) return;
+
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
@@ -51,8 +55,8 @@ const SignIn = () => {
         setFaceVerified(true);
         console.log("Face verified");
         stopWebcam();
-        const storedUser = JSON.parse(localStorage.getItem('user'));
 
+        const storedUser = JSON.parse(localStorage.getItem('user'));
         if (!storedUser.isAdmin && !storedUser.isDeveloper) {
           navigate("/dashboard");
         } else if (storedUser.isAdmin && !storedUser.isDeveloper) {
@@ -62,10 +66,14 @@ const SignIn = () => {
         }
       } else {
         setError("Face not matched. Access denied.");
+        stopWebcam();
+        setShowModal(false);
       }
     } catch (err) {
       console.error("Face verification failed:", err);
       setError("Face verification error.");
+      stopWebcam();
+      setShowModal(false);
     }
   };
 
@@ -88,7 +96,8 @@ const SignIn = () => {
         localStorage.setItem('user', JSON.stringify(user));
         console.log("Login successful");
 
-        startWebcam();
+        setShowModal(true);
+        setCountdown(3);
       } else {
         setError("Login failed: Invalid response");
       }
@@ -99,6 +108,19 @@ const SignIn = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let timer;
+    if (showModal && countdown > 0) {
+      timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
+    } else if (showModal && countdown === 0) {
+      startWebcam();
+      setTimeout(() => {
+        captureAndVerifyFace();
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [showModal, countdown]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-primary-bg">
@@ -146,32 +168,39 @@ const SignIn = () => {
             Don't have account yet or forgot your credentials?
           </p>
           <p className="text-center text-sm text-blue-500 mt-2">
-            Ask your admin for help. 
+            Ask your admin for help.
           </p>
         </form>
-        {authToken && !faceVerified && (
-          <div className="mt-8 text-center">
-            <h3 className="text-lg text-text-dark font-semibold mb-2">Verifying Face...</h3>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              width="320"
-              height="240"
-              className="mx-auto rounded border"
-            />
-            <button
-              onClick={captureAndVerifyFace}
-              className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-            >
-              Verify Face
-            </button>
-          </div>
-        )}
-        {faceVerified && (
-          <p className="text-green-500 text-center mt-4">Face verified successfully!</p>
-        )}
       </div>
+
+      {/* Face Detection Modal */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 text-center w-96">
+            {countdown > 0 ? (
+              <>
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">
+                  Detecting your face in:
+                </h3>
+                <p className="text-5xl font-bold text-green-600 animate-pulse">{countdown}</p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">Detecting Face...</h3>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  width="320"
+                  height="240"
+                  className="mx-auto rounded border"
+                />
+                <p className="text-gray-500 mt-2 text-sm">Please look directly at the camera</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
