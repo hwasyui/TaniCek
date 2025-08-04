@@ -11,6 +11,7 @@ import authRouter from './routes/auth.js';
 import machineRouter from './routes/machine.js';
 
 import './config/passport.js';
+import './cronJobs/dailyAiAnalysis.js';
 
 dotenv.config();
 
@@ -33,7 +34,6 @@ app.use((req, res, next) => {
   })(req, res, next);
 });
 
-// Routes
 app.get('/', (req, res) => res.redirect('/companies'));
 
 app.use('/companies', companyRouter);
@@ -41,7 +41,6 @@ app.use('/user', userGlobalRouter);
 app.use('/auth', authRouter);
 app.use('/machines', machineRouter);
 
-// Global error handler
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });

@@ -14,7 +14,7 @@ const analysisEntrySchema = new mongoose.Schema({
   notes: {
     type: String,
     required: true
-  }
+  },
 });
 
 const aiAnalysisSchema = new mongoose.Schema({
