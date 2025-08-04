@@ -18,7 +18,6 @@ const Dashboard = () => {
     const [currentWeather, setCurrentWeather] = useState(null);
     const [location, setLocation] = useState({ latitude: null, longitude: null, error: null });
 
-    // Get user location on mount
     useEffect(() => {
         if (!navigator.geolocation) {
             setLocation(loc => ({ ...loc, error: 'Geolocation is not supported by your browser' }));
