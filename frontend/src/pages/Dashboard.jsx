@@ -5,6 +5,7 @@ import PieChartComponent from '../components/PieChartComponent';
 import AddEquipmentForm from '../components/AddEquipmentForm';
 import LogActivityForm from '../components/LogActivityForm';
 
+
 const Dashboard = () => {
     const navigate = useNavigate();
     const [companyInfo, setCompanyInfo] = useState(null);
@@ -328,17 +329,6 @@ const Dashboard = () => {
                 <div className="md:col-span-3 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
                     <h3 className="text-xl font-semibold text-text-dark dark:text-text-light mb-4">Machine Status & Prediction</h3>
                     <div className="mb-4 flex flex-wrap gap-3">
-                       {User?.isAdmin && (
-                        <button
-                            onClick={() => setShowAddEquipmentModal(true)}
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Add New Machines</span>
-                        </button>
-                        )}
                         <button
                             onClick={() => setShowLogActivityModal(true)}
                             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
