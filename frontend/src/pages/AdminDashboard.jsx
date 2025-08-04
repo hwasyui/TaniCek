@@ -1,405 +1,530 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import EquipmentStatusTable from '../components/EquipmentStatusTable';
-import PieChartComponent from '../components/PieChartComponent';
-import AddEquipmentForm from '../components/AddEquipmentForm';
-import LogActivityForm from '../components/LogActivityForm';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-
-const Dashboard = () => {
+export default function AdminDashboard() {
     const navigate = useNavigate();
-    const [companyInfo, setCompanyInfo] = useState(null);
-    const [userName, setUserName] = useState('');
-    const [equipmentData, setEquipmentData] = useState([]);
-    const [loading, setLoading] = useState(true);
+
+    const [activeTab, setActiveTab] = useState('company');
+    const [aiSubTab, setAiSubTab] = useState('date');
+    const [userSubTab, setUserSubTab] = useState('regular');
+
+    const [company, setCompany] = useState(null);
+    const [users, setUsers] = useState([]);
+    const [machines, setMachines] = useState([]);
+
+    const [aiHistory, setAiHistory] = useState([]);
+    const [loadingAI, setLoadingAI] = useState(false);
+
+    const [searchUser, setSearchUser] = useState('');
+    const [searchMachine, setSearchMachine] = useState('');
+
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [showAddEquipmentModal, setShowAddEquipmentModal] = useState(false);
-    const [showLogActivityModal, setShowLogActivityModal] = useState(false);
-    const [currentWeather, setCurrentWeather] = useState(null);
-    const [location, setLocation] = useState({ latitude: null, longitude: null, error: null });
+
+    const [modalOpen, setModalOpen] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
+    const [currentMachine, setCurrentMachine] = useState(null);
+
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    const companyId = user?.company;
+    const headers = { Authorization: `Bearer ${token}` };
 
     useEffect(() => {
-        if (!navigator.geolocation) {
-            setLocation(loc => ({ ...loc, error: 'Geolocation is not supported by your browser' }));
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setLocation({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    error: null,
-                });
-            },
-            (err) => {
-                setLocation(loc => ({ ...loc, error: err.message }));
-            },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-        );
+        if (!user || !token) return navigate('/login');
+        fetchData();
     }, []);
 
-    useEffect(() => {
-        const fetchWeather = async () => {
-            if (!location.latitude || !location.longitude) return;
-
-            try {
-                const apiKey = '2458e6496d087230ac1b5a03a0a90d3f';
-                const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${apiKey}&units=metric`;
-
-                const res = await fetch(weatherUrl);
-                const weatherJson = await res.json();
-
-                if (!res.ok) throw new Error('Failed to fetch weather');
-
-                const condition = weatherJson.weather?.[0]?.main || 'N/A';
-                const description = weatherJson.weather?.[0]?.description || '';
-                const iconMap = {
-                    Rain: '🌧️',
-                    Clouds: '☁️',
-                    Clear: '☀️',
-                    Snow: '❄️',
-                    Thunderstorm: '⛈️',
-                    Drizzle: '🌦️',
-                    Mist: '🌫️',
-                };
-                const icon = iconMap[condition] || '🌡️';
-
-                setCurrentWeather({
-                    location: weatherJson.name || `Lat ${location.latitude.toFixed(2)}, Lon ${location.longitude.toFixed(2)}`,
-                    temperature: weatherJson.main?.temp || 0,
-                    condition: condition,
-                    humidity: weatherJson.main?.humidity || 0,
-                    windSpeed: weatherJson.wind?.speed || 0,
-                    aqi: '-',
-                    prediction: `Currently ${description}`,
-                    icon: icon,
-                });
-            } catch (err) {
-                console.error('Weather fetch error:', err);
-            }
-        };
-
-        fetchWeather();
-    }, [location.latitude, location.longitude]);
-
-    const fetchDashboardData = useCallback(async () => {
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
-
-        if (!storedUser || !token) {
-            navigate('/login');
-            return;
-        }
-
-        const user = JSON.parse(storedUser);
-        const userId = user.id;
-        const companyId = user.company;
-
+    const fetchData = async () => {
         setLoading(true);
-        setError(null);
-
         try {
-            const [userRes, companyRes, equipmentRes] = await Promise.all([
-                fetch(`http://localhost:3000/companies/${companyId}/user/${userId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                fetch(`http://localhost:3000/companies/${companyId}`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
-                fetch(`http://localhost:3000/companies/${companyId}/machines`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                }),
+            const [companyRes, usersRes, machineRes] = await Promise.all([
+                fetch(`http://localhost:3000/companies/${companyId}`, { headers }),
+                fetch(`http://localhost:3000/companies/${companyId}/user`, { headers }),
+                fetch(`http://localhost:3000/companies/${companyId}/machines`, { headers }),
             ]);
 
-            const userJson = await userRes.json();
-            const companyJson = await companyRes.json();
-            const machines = await equipmentRes.json();
+            const companyData = await companyRes.json();
+            const userData = await usersRes.json();
+            const machineData = await machineRes.json();
 
-            if (!userRes.ok) throw new Error(userJson.message || 'Failed to fetch user');
-            if (!companyRes.ok) throw new Error(companyJson.message || 'Failed to fetch company info');
-            if (!equipmentRes.ok) throw new Error(machines.message || 'Failed to fetch equipment data');
-
-            setUserName(userJson.data.name);
-            setCompanyInfo(companyJson.data);
-
-            const enrichedMachines = await Promise.all(
-                machines.map(async (machine) => {
-                    try {
-                        const [aiRes, logRes] = await Promise.all([
-                            fetch(`http://localhost:3000/companies/${companyId}/machines/${machine._id}/ai-analysis`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                            }),
-                            fetch(`http://localhost:3000/companies/${companyId}/machines/${machine._id}/logs`, {
-                                headers: { Authorization: `Bearer ${token}` },
-                            }),
-                        ]);
-
-                        const aiData = await aiRes.json();
-                        const logsData = await logRes.json();
-
-                        const latestAnalysis = Array.isArray(aiData)
-                            ? aiData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-                            : null;
-
-                        const latestLog = Array.isArray(logsData)
-                            ? logsData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0]
-                            : null;
-
-                        return {
-                            ...machine,
-                            forecast: latestAnalysis?.aiAnalysis || null,
-                            latestLog: latestLog || null,
-                            latestLat: latestLog?.location_lat ?? machine.location_lat ?? null,
-                            latestLon: latestLog?.location_lon ?? machine.location_lon ?? null,
-                        };
-                    } catch (err) {
-                        console.error(`Error fetching extra info for machine ${machine._id}`, err);
-                        return machine;
-                    }
-                })
-            );
-
-            setEquipmentData(enrichedMachines);
-            console.log('Dashboard refreshed!', enrichedMachines);
+            setCompany(companyData);
+            setUsers(userData.data || []);
+            setMachines(machineData || []);
         } catch (err) {
-            console.error(err);
-            setError(err.message);
+            setError('Failed to fetch data');
         } finally {
             setLoading(false);
         }
-    }, [navigate]);
+    };
+
+    const fetchAIHistory = async () => {
+        if (!companyId) return;
+        setLoadingAI(true);
+        try {
+            const res = await fetch(`http://localhost:3000/companies/${companyId}/machines/ai-analysis`, {
+                headers,
+            });
+            const data = await res.json();
+
+            const machineIds = machines.map((m) => m._id);
+            const filtered = (data || [])
+                .map((entry) => ({
+                    ...entry,
+                    aiAnalysis: (entry.aiAnalysis || []).filter((ai) =>
+                        machineIds.includes(ai.machine_id)
+                    ),
+                }))
+                .filter((entry) => entry.aiAnalysis.length > 0);
+
+            setAiHistory(filtered);
+        } catch (err) {
+            console.error('Failed to fetch AI history:', err);
+        } finally {
+            setLoadingAI(false);
+        }
+    };
 
     useEffect(() => {
-        fetchDashboardData();
-    }, [fetchDashboardData]);
+        if (activeTab === 'ai-history') {
+            fetchAIHistory();
+        }
+    }, [activeTab, machines]);
 
-    const handleFormSuccess = () => {
-        fetchDashboardData();
-        setShowAddEquipmentModal(false);
-        setShowLogActivityModal(false);
+    const handleDeleteUser = async (id) => {
+        try {
+            await fetch(`http://localhost:3000/companies/${companyId}/user/${id}`, {
+                method: 'DELETE',
+                headers,
+            });
+            setUsers((prev) => prev.filter((u) => u._id !== id));
+        } catch (err) {
+            alert('Failed to delete user');
+        }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/login');
+    const handleDeleteMachine = async (id) => {
+        try {
+            await fetch(`http://localhost:3000/companies/${companyId}/machines/${id}`, {
+                method: 'DELETE',
+                headers,
+            });
+            setMachines((prev) => prev.filter((m) => m._id !== id));
+        } catch (err) {
+            alert('Failed to delete machine');
+        }
     };
 
-    const getStatusCounts = () => {
-        const counts = { High: 0, Medium: 0, Low: 0 };
-        equipmentData.forEach(item => {
-            if (item.forecast?.level) {
-                const level = item.forecast.level.toLowerCase();
-                if (level === 'high') counts.High++;
-                else if (level === 'medium') counts.Medium++;
-                else if (level === 'low') counts.Low++;
-            }
+    const filteredUsers = users
+        .filter((u) =>
+            u.name.toLowerCase().includes(searchUser.toLowerCase())
+        )
+        .filter((u) => (userSubTab === 'admin' ? u.isAdmin : !u.isAdmin));
+
+    const filteredMachines = machines.filter((m) =>
+        m.name?.toLowerCase().includes(searchMachine.toLowerCase())
+    );
+
+    const groupByMachine = () => {
+        const grouped = {};
+        aiHistory.forEach((entry) => {
+            (entry.aiAnalysis || []).forEach((analysis) => {
+                if (!grouped[analysis.machine_id]) grouped[analysis.machine_id] = [];
+                grouped[analysis.machine_id].push({
+                    ...analysis,
+                    createdAt: entry.createdAt,
+                });
+            });
         });
-        return counts;
+        return grouped;
     };
 
-    const statusCounts = getStatusCounts();
+    const groupByDate = () => {
+        const grouped = {};
+        aiHistory.forEach((entry) => {
+            const date = new Date(entry.createdAt).toLocaleDateString();
+            if (!grouped[date]) grouped[date] = [];
+            grouped[date].push(...(entry.aiAnalysis || []));
+        });
+        return grouped;
+    };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-primary-bg dark:bg-dark-primary-bg">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
-                <p className="ml-4 text-text-dark dark:text-text-light">Load to Dashboard...</p>
-            </div>
-        );
-    }
+    const handleOpenModal = (user = null, machine = null) => {
+        setCurrentUser(null);
+        setCurrentMachine(null);
 
-    if (error) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-primary-bg dark:bg-dark-primary-bg">
-                <p className="text-red-500 mb-4 text-lg">Error: {error}</p>
-                <button onClick={handleLogout} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Back to sign in page</button>
-            </div>
-        );
-    }
+        if (user) {
+            setCurrentUser(user);
+        } else if (machine) {
+            setCurrentMachine(machine);
+        }
+
+        setModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setCurrentUser(null);
+        setCurrentMachine(null);
+        setModalOpen(false);
+    };
+
+    const handleSaveUser = async (userData) => {
+        try {
+            const method = currentUser ? 'PUT' : 'POST';
+            const url = currentUser
+                ? `http://localhost:3000/companies/${companyId}/user/${currentUser._id}`
+                : `http://localhost:3000/companies/${companyId}/user`;
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    ...headers,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setUsers((prev) => {
+                    if (currentUser) {
+                        return prev.map((u) => (u._id === currentUser._id ? data.data : u));
+                    }
+                    return [...prev, data.data];
+                });
+                handleCloseModal();
+            } else {
+                alert(data.error);
+            }
+        } catch (err) {
+            alert('Failed to save user');
+        }
+    };
+
+    const handleSaveMachine = async (machineData) => {
+        try {
+            const method = currentMachine ? 'PUT' : 'POST';
+            const url = currentMachine
+                ? `http://localhost:3000/companies/${companyId}/machines/${currentMachine._id}`
+                : `http://localhost:3000/companies/${companyId}/machines`;
+
+            const response = await fetch(url, {
+                method,
+                headers: {
+                    ...headers,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(machineData),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setMachines((prev) => {
+                    if (currentMachine) {
+                        return prev.map((m) => (m._id === currentMachine._id ? data.data : m));
+                    }
+                    return [...prev, data.data];
+                });
+                handleCloseModal();
+            } else {
+                alert(data.error);
+            }
+        } catch (err) {
+            alert('Failed to save machine');
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-primary-bg dark:bg-dark-primary-bg flex flex-col text-text-dark dark:text-text-light">
-            {/* Top Navigation Bar */}
-            <nav className="bg-card-bg dark:bg-dark-card-bg shadow-sm p-4 flex justify-between items-center">
-                <div className="text-5xl font-bold text-green-500">TaniCek</div>
-                <div className="flex items-center space-x-6">
-                    <span className="text-text-dark text-lg hidden md:block">Halo, <span className="font-semibold">{userName}</span>!</span>
-
-                    {/* Notification Icon (Placeholder) */}
-                    <button className="text-text-dark dark:text-text-light hover:text-green-500 relative">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        {true && <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-500 rounded-full">2</span>}
-                    </button>
-
-                    {/* User Profile Dropdown / Logout */}
-                    <div className="relative group">
-                        <button className="flex items-center space-x-2 text-text-dark dark:text-text-light hover:text-green-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span className="hidden md:block">Profile</span>
-                        </button>
-                        <div className="absolute right-0 mt-2 w-48 bg-card-bg dark:bg-dark-card-bg border border-border-light dark:border-dark-border-light rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
-                            <Link to="/profile" className="block px-4 py-2 text-text-dark dark:text-text-light hover:bg-green-100 dark:hover:bg-green-500">Profile Settings</Link>
-                            <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-500 hover:bg-green-100 dark:hover:bg-green-500">Log Out</button>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
-            {/* Show user location if available */}
-            <div className="p-4 bg-green-100 text-green-900 text-center">
-                {location.error && <p>Location error: {location.error}</p>}
-                {location.latitude && location.longitude && (
-                    <p>Your location: Lat {location.latitude.toFixed(4)}, Lon {location.longitude.toFixed(4)}</p>
-                )}
-                {!location.latitude && !location.longitude && !location.error && <p>Obtaining your location...</p>}
-            </div>
-
-            {/* Main Content Area */}
-            <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* Card 1: Machine Status Summary */}
-                <div className="md:col-span-1 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
-                    <h3 className="text-xl font-semibold text-text-dark dark:text-text-light text-center mb-4">Machine Status Summary</h3>
-                    <div className="w-full h-48 flex items-center justify-center">
-                        <PieChartComponent
-                            data={[
-                                { name: 'High', value: statusCounts.High, color: '#F44336' },
-                                { name: 'Medium', value: statusCounts.Medium, color: '#FFC107' },
-                                { name: 'Low', value: statusCounts.Low, color: '#4CAF50' },
-                            ]}
-                        />
-                    </div>
-                    <div className="mt-6 text-center">
-                        <p className="text-lg font-bold text-text-dark dark:text-text-light mb-2">Machine Total: {equipmentData.length}</p>
-                        <p className="text-md text-black-500">Low: {statusCounts.Low}</p>
-                        <p className="text-md text-black-500">Medium: {statusCounts.Medium}</p>
-                        <p className="text-md text-black-500">High: {statusCounts.High}</p>
-                    </div>
-                </div>
-
-                {/* Card 2: Current Weather Prediction */}
-                <div className="md:col-span-1 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
-                    <h3 className="text-xl font-semibold text-text-dark dark:text-text-light text-center mb-4">Current Weather Prediction</h3>
-                    {currentWeather ? (
-                        <div className="space-y-2">
-                            <p className="text-4xl text-center mb-2">{currentWeather.icon}</p>
-                            <p className="text-lg font-bold text-center">{currentWeather.temperature}°C, {currentWeather.condition}</p>
-                            <p className="text-sm text-center text-text-light dark:text-gray-400">{currentWeather.location}</p>
-                            <div className="flex justify-around text-sm text-text-light dark:text-gray-400 mt-2">
-                                <span>Humidity: {currentWeather.humidity}%</span>
-                                <span>Wind: {currentWeather.windSpeed} km/h</span>
-                            </div>
-                            <p className="text-sm italic mt-4 text-center">{currentWeather.prediction}</p>
-                        </div>
-                    ) : (
-                        <p className="text-center text-text-light dark:text-gray-400 italic">Loading...</p>
-                    )}
-                </div>
-
-                {/* Card 3: Current Reminder*/}
-                <div className="md:col-span-1 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md flex flex-col">
-                    <h3 className="text-xl font-semibold text-text-dark dark:text-text-light mb-4">Current Reminder</h3>
-                    <div className="flex-1 space-y-3">
-
-                        <div className="bg-blue-50 border border-blue-200 p-3 rounded-md dark:bg-white-900 dark:border-blue-700">
-                            <p className="font-semibold text-blue-500 dark:text-blue-300 text-sm">Change the oil in the main generator set</p>
-                            <p className="text-xs text-text-light dark:text-gray-400">Due date: 05 August 2025</p>
-                        </div>
-                        <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-md dark:bg-white-900 dark:border-yellow-700">
-                            <p className="font-semibold text-yellow-600 dark:text-yellow-300 text-sm">Check the Air Filter of the Rice Threshing Machine</p>
-                            <p className="text-xs text-text-light dark:text-gray-400">Expected to be cleaned this week</p>
-                        </div>
-                        {false && <p className="text-center text-text-light dark:text-text-light italic mt-8">There are no current reminders. You can add the reminder manually</p>}
-                    </div>
+        <div className="flex min-h-screen bg-green-50">
+            {/* Sidebar */}
+            <aside className="w-64 bg-green-700 text-white p-4 space-y-4">
+                <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+                {['company', 'users', 'machines', 'ai-history'].map((tab) => (
                     <button
-                        onClick={() => alert('!!!')}
-                        className="mt-6 bg-green-500 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline self-end"
+                        key={tab}
+                        className={`block w-full text-left px-4 py-2 rounded ${activeTab === tab ? 'bg-yellow-400 text-black' : 'hover:bg-green-600'
+                            }`}
+                        onClick={() => setActiveTab(tab)}
                     >
-                        + Add Reminder
+                        {tab === 'ai-history' ? 'AI History' : tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </button>
-                </div>
+                ))}
+            </aside>
 
-                {/* Card 4: Machines Status & AI Prediction Table*/}
-                <div className="md:col-span-3 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
-                    <h3 className="text-xl font-semibold text-text-dark dark:text-text-light mb-4">Machine Status & Prediction</h3>
-                    <div className="mb-4 flex flex-wrap gap-3">
-                        <button
-                            onClick={() => setShowAddEquipmentModal(true)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>Add Machine</span>
-                        </button>
-                        <button
-                            onClick={() => setShowLogActivityModal(true)}
-                            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center space-x-2"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                            <span>Add Daily Log</span>
-                        </button>
-                    </div>
+            {/* Content */}
+            <main className="flex-1 p-8">
+                {loading ? (
+                    <p className="text-green-800">Loading...</p>
+                ) : error ? (
+                    <p className="text-red-600">{error}</p>
+                ) : (
+                    <>
+                        {activeTab === 'company' && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-green-800 mb-4">Company Info</h2>
+                                {company ? (
+                                    <div className="bg-white p-6 rounded shadow">
+                                        <p><strong>Name:</strong> {company.name}</p>
+                                        <p><strong>Description:</strong> {company.description}</p>
+                                    </div>
+                                ) : (
+                                    <p>No company info available.</p>
+                                )}
+                            </div>
+                        )}
 
-                    <EquipmentStatusTable equipment={equipmentData} />
-                </div>
+                        {activeTab === 'users' && (
+                            <div>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl font-bold text-green-800">Staff / Users</h2>
+                                    <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded" onClick={() => handleOpenModal()}>
+                                        + Add User
+                                    </button>
+                                </div>
+                                <div className="flex gap-4 mb-4">
+                                    <button
+                                        className={`px-4 py-2 rounded ${userSubTab === 'regular' ? 'bg-green-700 text-white' : 'bg-green-200'
+                                            }`}
+                                        onClick={() => setUserSubTab('regular')}
+                                    >
+                                        Regular Staff
+                                    </button>
+                                    <button
+                                        className={`px-4 py-2 rounded ${userSubTab === 'admin' ? 'bg-green-700 text-white' : 'bg-green-200'
+                                            }`}
+                                        onClick={() => setUserSubTab('admin')}
+                                    >
+                                        Admin Staff
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search users..."
+                                    className="mb-4 p-2 border rounded w-full"
+                                    value={searchUser}
+                                    onChange={(e) => setSearchUser(e.target.value)}
+                                />
+                                <div className="bg-white rounded shadow">
+                                    {filteredUsers.length === 0 ? (
+                                        <p className="p-4 text-gray-500">No users found.</p>
+                                    ) : (
+                                        <table className="w-full text-left">
+                                            <thead className="bg-green-100">
+                                                <tr>
+                                                    <th className="p-2">Name</th>
+                                                    <th className="p-2">Email</th>
+                                                    <th className="p-2">Admin</th>
+                                                    <th className="p-2">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredUsers.map((user) => (
+                                                    <tr key={user._id} className="border-t">
+                                                        <td className="p-2">{user.name}</td>
+                                                        <td className="p-2">{user.email}</td>
+                                                        <td className="p-2">{user.isAdmin ? 'Yes' : 'No'}</td>
+                                                        <td className="p-2 space-x-2">
+                                                            <button className="text-blue-600 hover:underline" onClick={() => handleOpenModal(user)}>Edit</button>
+                                                            <button
+                                                                className="text-red-600 hover:underline"
+                                                                onClick={() => handleDeleteUser(user._id)}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'machines' && (
+                            <div>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl font-bold text-green-800">Machines</h2>
+                                    <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded" onClick={() => handleOpenModal(null, {})}>
+                                        + Add Machine
+                                    </button>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Search machines..."
+                                    className="mb-4 p-2 border rounded w-full"
+                                    value={searchMachine}
+                                    onChange={(e) => setSearchMachine(e.target.value)}
+                                />
+                                <div className="bg-white rounded shadow">
+                                    {filteredMachines.length === 0 ? (
+                                        <p className="p-4 text-gray-500">No machines found.</p>
+                                    ) : (
+                                        <table className="w-full text-left">
+                                            <thead className="bg-green-100">
+                                                <tr>
+                                                    <th className="p-2">Name</th>
+                                                    <th className="p-2">Status</th>
+                                                    <th className="p-2">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredMachines.map((machine) => (
+                                                    <tr key={machine._id} className="border-t">
+                                                        <td className="p-2">{machine.name || 'N/A'}</td>
+                                                        <td className="p-2">{machine.status || 'Unknown'}</td>
+                                                        <td className="p-2 space-x-2">
+                                                            <button className="text-blue-600 hover:underline" onClick={() => handleOpenModal(null, machine)}>Edit</button>
+                                                            <button
+                                                                className="text-red-600 hover:underline"
+                                                                onClick={() => handleDeleteMachine(machine._id)}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'ai-history' && (
+                            <div>
+                                <h2 className="text-2xl font-bold text-green-800 mb-4">AI Analysis History</h2>
+                                <div className="flex space-x-4 mb-6">
+                                    <button
+                                        className={`px-4 py-2 rounded ${aiSubTab === 'date' ? 'bg-green-700 text-white' : 'bg-green-200'
+                                            }`}
+                                        onClick={() => setAiSubTab('date')}
+                                    >
+                                        Group by Date
+                                    </button>
+                                    <button
+                                        className={`px-4 py-2 rounded ${aiSubTab === 'machine' ? 'bg-green-700 text-white' : 'bg-green-200'
+                                            }`}
+                                        onClick={() => setAiSubTab('machine')}
+                                    >
+                                        Group by Machine
+                                    </button>
+                                </div>
+
+                                {loadingAI ? (
+                                    <p>Loading AI history...</p>
+                                ) : aiSubTab === 'date' ? (
+                                    Object.entries(groupByDate()).map(([date, records]) => (
+                                        <div key={date} className="mb-4 bg-white p-4 rounded shadow">
+                                            <h3 className="font-semibold text-lg text-green-800">{date}</h3>
+                                            <ul className="list-disc pl-5 mt-2">
+                                                {records.map((item) => (
+                                                    <li key={item._id}>
+                                                        <strong>Machine:</strong> {item.machine_id} <br />
+                                                        <strong>Level:</strong> {item.level} <br />
+                                                        <strong>Notes:</strong> {item.notes}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))
+                                ) : (
+                                    Object.entries(groupByMachine()).map(([machineId, records]) => {
+                                        const machineName = machines.find((m) => m._id === machineId)?.name || machineId;
+                                        return (
+                                            <div key={machineId} className="mb-4 bg-white p-4 rounded shadow">
+                                                <h3 className="font-semibold text-lg text-green-800">Machine: {machineName}</h3>
+                                                <ul className="list-disc pl-5 mt-2">
+                                                    {records.map((item) => (
+                                                        <li key={item._id}>
+                                                            <strong>Date:</strong> {new Date(item.createdAt).toLocaleString()} <br />
+                                                            <strong>Level:</strong> {item.level} <br />
+                                                            <strong>Notes:</strong> {item.notes}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        );
+                                    })
+                                )}
+                            </div>
+                        )}
+                    </>
+                )}
             </main>
 
-            {/* Conditional rendering for Add Equipment Modal */}
-            {showAddEquipmentModal && (
-                <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-card-bg bg-white bg-dark-bg p-10 rounded-lg shadow-2xl max-w-2xl w-full animate-fade-in-up text-text-dark dark:text-text-light relative">
-                        <button
-                            onClick={() => setShowAddEquipmentModal(false)}
-                            className="absolute top-3 right-3 text-white hover:text-white-600 dark:text-white dark:hover:text-white-200"
-                            aria-label="Close"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <AddEquipmentForm
-                            onClose={() => setShowAddEquipmentModal(false)}
-                            onSuccess={handleFormSuccess}
-                        />
+            {/* Modal for User */}
+            {modalOpen && currentUser && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded shadow-lg">
+                        <h2 className="text-2xl font-bold mb-4">{currentUser ? 'Edit User' : 'Add User'}</h2>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.target);
+                            const userData = {
+                                email: formData.get('email'),
+                                name: formData.get('name'),
+                                password: formData.get('password'),
+                                isAdmin: formData.get('isAdmin') === 'on',
+                                isDeveloper: formData.get('isDeveloper') === 'on',
+                                socialId: formData.get('socialId'),
+                            };
+                            handleSaveUser(userData);
+                        }}>
+                            <input type="text" name="name" placeholder="Name" defaultValue={currentUser?.name} required className="mb-2 p-2 border rounded w-full" />
+                            <input type="email" name="email" placeholder="Email" defaultValue={currentUser?.email} required className="mb-2 p-2 border rounded w-full" />
+                            <input type="password" name="password" placeholder="Password" defaultValue={currentUser?.password} required className="mb-2 p-2 border rounded w-full" />
+                            <label>
+                                <input type="checkbox" name="isAdmin" defaultChecked={currentUser?.isAdmin} /> Admin
+                            </label>
+                            <label>
+                                <input type="checkbox" name="isDeveloper" defaultChecked={currentUser?.isDeveloper} /> Developer
+                            </label>
+                            <input type="text" name="socialId" placeholder="Social ID" defaultValue={currentUser?.socialId} className="mb-2 p-2 border rounded w-full" />
+                            <div className="flex justify-end mt-4">
+                                <button type="button" className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={handleCloseModal}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
+                                    {currentUser ? 'Update User' : 'Add User'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
 
-            {/* to show log activity modal */}
-            {showLogActivityModal && (
-                <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-card-bg dark:bg-dark-card-bg p-10 bg-white rounded-lg shadow-2xl max-w-2xl w-full animate-fade-in-up text-text-dark dark:text-text-light relative">
-                        <button
-                            onClick={() => setShowLogActivityModal(false)}
-                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-                            aria-label="Close"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <LogActivityForm
-                            onClose={() => setShowLogActivityModal(false)}
-                            onSuccess={handleFormSuccess}
-                            machines={equipmentData.map(eq => ({ id: eq._id, name: eq.name }))}
-                            latitude={location.latitude}
-                            longitude={location.longitude}
-                        />
-
+            {/* Modal for Machine */}
+            {modalOpen && currentMachine && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white p-6 rounded shadow-lg">
+                        <h2 className="text-2xl font-bold mb-4">{currentMachine ? 'Edit Machine' : 'Add Machine'}</h2>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.target);
+                            const machineData = {
+                                name: formData.get('name'),
+                                status: formData.get('status'),
+                            };
+                            handleSaveMachine(machineData);
+                        }}>
+                            <input type="text" name="name" placeholder="Machine Name" defaultValue={currentMachine?.name} required className="mb-2 p-2 border rounded w-full" />
+                            <input type="text" name="status" placeholder="Status" defaultValue={currentMachine?.status} className="mb-2 p-2 border rounded w-full" />
+                            <div className="flex justify-end mt-4">
+                                <button type="button" className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={handleCloseModal}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
+                                    {currentMachine ? 'Update Machine' : 'Add Machine'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
+
         </div>
     );
-};
-
-export default Dashboard;
+}
