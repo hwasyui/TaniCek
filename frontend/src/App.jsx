@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SignIn from './pages/Auth/SignIn';
-import Signup from './pages/Auth/Signup';
 import Dashboard from './pages/Dashboard';
 
 const ProtectedRoute = ({ children }) => {
@@ -43,7 +42,6 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<SignIn />} />
-        <Route path="/signup" element={<Signup />} />
 
         {/* Protected Routes */}
         <Route

@@ -123,10 +123,10 @@ const SignIn = () => {
             </button>
           </div>
           <p className="text-center text-sm text-text-dark mt-4">
-            Don't have account yet? <Link to="/signup" className="text-blue-500 hover:underline font-semibold">Sign up</Link>
+            Don't have account yet or forgot your credentials?
           </p>
           <p className="text-center text-sm text-blue-500 mt-2">
-            <Link to="#" className="hover:underline">Forgot Password?</Link>
+            Ask your admin for help. 
           </p>
         </form>
         {authToken && !faceVerified && (
