@@ -17,14 +17,6 @@ const MachineSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Company' 
     },
-    location_lat: { 
-        type: Number,
-        required: true
-    },
-    location_lon: { 
-        type: Number,
-        required: true
-    },
     userLogs: [
         { 
             type: mongoose.Schema.Types.ObjectId, 

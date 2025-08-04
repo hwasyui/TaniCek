@@ -5,6 +5,7 @@ import aiAnalysisModel from '../models/aiAnalysis.model.js';
 export const getAllMachinesAIPrediction = async (req, res) => {
   try {
     const allAnalysis = await aiAnalysisModel.find()
+      .populate('aiAnalysis.machine_id'); 
 
     return res.json(allAnalysis);
   } catch (error) {

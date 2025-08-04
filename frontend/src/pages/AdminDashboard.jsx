@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/login');
+    };
 
     const [activeTab, setActiveTab] = useState('company');
     const [aiSubTab, setAiSubTab] = useState('date');
@@ -15,20 +20,20 @@ export default function AdminDashboard() {
     const [aiHistory, setAiHistory] = useState([]);
     const [loadingAI, setLoadingAI] = useState(false);
 
-    const [searchUser, setSearchUser] = useState('');
+    const [searchUser , setSearchUser ] = useState('');
     const [searchMachine, setSearchMachine] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [currentUser, setCurrentUser] = useState(null);
+    const [currentUser , setCurrentUser ] = useState(null);
     const [currentMachine, setCurrentMachine] = useState(null);
 
-    const storedUser = localStorage.getItem('user');
+    const storedUser  = localStorage.getItem('user');
     const token = localStorage.getItem('token');
 
-    const user = storedUser ? JSON.parse(storedUser) : null;
+    const user = storedUser  ? JSON.parse(storedUser ) : null;
     const companyId = user?.company;
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -74,7 +79,7 @@ export default function AdminDashboard() {
                 .map((entry) => ({
                     ...entry,
                     aiAnalysis: (entry.aiAnalysis || []).filter((ai) =>
-                        machineIds.includes(ai.machine_id)
+                        machineIds.includes(ai.machine_id._id)
                     ),
                 }))
                 .filter((entry) => entry.aiAnalysis.length > 0);
@@ -93,7 +98,7 @@ export default function AdminDashboard() {
         }
     }, [activeTab, machines]);
 
-    const handleDeleteUser = async (id) => {
+    const handleDeleteUser  = async (id) => {
         try {
             await fetch(`http://localhost:3000/companies/${companyId}/user/${id}`, {
                 method: 'DELETE',
@@ -119,7 +124,7 @@ export default function AdminDashboard() {
 
     const filteredUsers = users
         .filter((u) =>
-            u.name.toLowerCase().includes(searchUser.toLowerCase())
+            u.name.toLowerCase().includes(searchUser .toLowerCase())
         )
         .filter((u) => (userSubTab === 'admin' ? u.isAdmin : !u.isAdmin));
 
@@ -131,8 +136,9 @@ export default function AdminDashboard() {
         const grouped = {};
         aiHistory.forEach((entry) => {
             (entry.aiAnalysis || []).forEach((analysis) => {
-                if (!grouped[analysis.machine_id]) grouped[analysis.machine_id] = [];
-                grouped[analysis.machine_id].push({
+                const machineId = analysis.machine_id._id;
+                if (!grouped[machineId]) grouped[machineId] = [];
+                grouped[machineId].push({
                     ...analysis,
                     createdAt: entry.createdAt,
                 });
@@ -152,11 +158,11 @@ export default function AdminDashboard() {
     };
 
     const handleOpenModal = (user = null, machine = null) => {
-        setCurrentUser(null);
+        setCurrentUser (null);
         setCurrentMachine(null);
 
         if (user) {
-            setCurrentUser(user);
+            setCurrentUser (user);
         } else if (machine) {
             setCurrentMachine(machine);
         }
@@ -165,16 +171,16 @@ export default function AdminDashboard() {
     };
 
     const handleCloseModal = () => {
-        setCurrentUser(null);
+        setCurrentUser (null);
         setCurrentMachine(null);
         setModalOpen(false);
     };
 
-    const handleSaveUser = async (userData) => {
+    const handleSaveUser  = async (userData) => {
         try {
-            const method = currentUser ? 'PUT' : 'POST';
-            const url = currentUser
-                ? `http://localhost:3000/companies/${companyId}/user/${currentUser._id}`
+            const method = currentUser  ? 'PUT' : 'POST';
+            const url = currentUser 
+                ? `http://localhost:3000/companies/${companyId}/user/${currentUser ._id}`
                 : `http://localhost:3000/companies/${companyId}/user`;
 
             const response = await fetch(url, {
@@ -189,8 +195,8 @@ export default function AdminDashboard() {
             const data = await response.json();
             if (response.ok) {
                 setUsers((prev) => {
-                    if (currentUser) {
-                        return prev.map((u) => (u._id === currentUser._id ? data.data : u));
+                    if (currentUser ) {
+                        return prev.map((u) => (u._id === currentUser ._id ? data.data : u));
                     }
                     return [...prev, data.data];
                 });
@@ -251,6 +257,7 @@ export default function AdminDashboard() {
                         {tab === 'ai-history' ? 'AI History' : tab.charAt(0).toUpperCase() + tab.slice(1)}
                     </button>
                 ))}
+                <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-red-500 hover:bg-green-100 dark:hover:bg-green-500">Log Out</button>
             </aside>
 
             {/* Content */}
@@ -303,8 +310,8 @@ export default function AdminDashboard() {
                                     type="text"
                                     placeholder="Search users..."
                                     className="mb-4 p-2 border rounded w-full"
-                                    value={searchUser}
-                                    onChange={(e) => setSearchUser(e.target.value)}
+                                    value={searchUser }
+                                    onChange={(e) => setSearchUser (e.target.value)}
                                 />
                                 <div className="bg-white rounded shadow">
                                     {filteredUsers.length === 0 ? (
@@ -329,7 +336,7 @@ export default function AdminDashboard() {
                                                             <button className="text-blue-600 hover:underline" onClick={() => handleOpenModal(user)}>Edit</button>
                                                             <button
                                                                 className="text-red-600 hover:underline"
-                                                                onClick={() => handleDeleteUser(user._id)}
+                                                                onClick={() => handleDeleteUser (user._id)}
                                                             >
                                                                 Delete
                                                             </button>
@@ -422,7 +429,7 @@ export default function AdminDashboard() {
                                             <ul className="list-disc pl-5 mt-2">
                                                 {records.map((item) => (
                                                     <li key={item._id}>
-                                                        <strong>Machine:</strong> {item.machine_id} <br />
+                                                        <strong>Machine:</strong> {item.machine_id.name} <br />
                                                         <strong>Level:</strong> {item.level} <br />
                                                         <strong>Notes:</strong> {item.notes}
                                                     </li>
@@ -432,7 +439,8 @@ export default function AdminDashboard() {
                                     ))
                                 ) : (
                                     Object.entries(groupByMachine()).map(([machineId, records]) => {
-                                        const machineName = machines.find((m) => m._id === machineId)?.name || machineId;
+                                        const machine = machines.find((m) => m._id === machineId);
+                                        const machineName = machine ? machine.name : 'Unknown Machine';
                                         return (
                                             <div key={machineId} className="mb-4 bg-white p-4 rounded shadow">
                                                 <h3 className="font-semibold text-lg text-green-800">Machine: {machineName}</h3>
@@ -456,10 +464,10 @@ export default function AdminDashboard() {
             </main>
 
             {/* Modal for User */}
-            {modalOpen && currentUser && (
+            {modalOpen && currentUser  && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
                     <div className="bg-white p-6 rounded shadow-lg">
-                        <h2 className="text-2xl font-bold mb-4">{currentUser ? 'Edit User' : 'Add User'}</h2>
+                        <h2 className="text-2xl font-bold mb-4">{currentUser  ? 'Edit User' : 'Add User'}</h2>
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.target);
@@ -471,24 +479,24 @@ export default function AdminDashboard() {
                                 isDeveloper: formData.get('isDeveloper') === 'on',
                                 socialId: formData.get('socialId'),
                             };
-                            handleSaveUser(userData);
+                            handleSaveUser (userData);
                         }}>
-                            <input type="text" name="name" placeholder="Name" defaultValue={currentUser?.name} required className="mb-2 p-2 border rounded w-full" />
-                            <input type="email" name="email" placeholder="Email" defaultValue={currentUser?.email} required className="mb-2 p-2 border rounded w-full" />
-                            <input type="password" name="password" placeholder="Password" defaultValue={currentUser?.password} required className="mb-2 p-2 border rounded w-full" />
+                            <input type="text" name="name" placeholder="Name" defaultValue={currentUser ?.name} required className="mb-2 p-2 border rounded w-full" />
+                            <input type="email" name="email" placeholder="Email" defaultValue={currentUser ?.email                            } required className="mb-2 p-2 border rounded w-full" />
+                            <input type="password" name="password" placeholder="Password" defaultValue={currentUser  ?.password} required className="mb-2 p-2 border rounded w-full" />
                             <label>
-                                <input type="checkbox" name="isAdmin" defaultChecked={currentUser?.isAdmin} /> Admin
+                                <input type="checkbox" name="isAdmin" defaultChecked={currentUser  ?.isAdmin} /> Admin
                             </label>
                             <label>
-                                <input type="checkbox" name="isDeveloper" defaultChecked={currentUser?.isDeveloper} /> Developer
+                                <input type="checkbox" name="isDeveloper" defaultChecked={currentUser  ?.isDeveloper} /> Developer
                             </label>
-                            <input type="text" name="socialId" placeholder="Social ID" defaultValue={currentUser?.socialId} className="mb-2 p-2 border rounded w-full" />
+                            <input type="text" name="socialId" placeholder="Social ID" defaultValue={currentUser  ?.socialId} className="mb-2 p-2 border rounded w-full" />
                             <div className="flex justify-end mt-4">
                                 <button type="button" className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={handleCloseModal}>
                                     Cancel
                                 </button>
                                 <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
-                                    {currentUser ? 'Update User' : 'Add User'}
+                                    {currentUser  ? 'Update User' : 'Add User'}
                                 </button>
                             </div>
                         </form>
@@ -524,7 +532,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             )}
-
         </div>
     );
 }
