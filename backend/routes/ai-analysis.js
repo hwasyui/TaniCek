@@ -11,5 +11,4 @@ router.use(authenticate);
 // /companies/:companyId/machines/ai-analysis
 router.get('/', getAllMachinesAIPrediction);
 
-
 export default router;

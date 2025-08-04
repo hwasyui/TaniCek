@@ -11,8 +11,6 @@ import userlogRouter from "./userlog.js";
 import machineAIAnalysisRouter from './machineAiAnalysis.js';
 import aiAnalysisRouter from './ai-analysis.js';
 
-import { getAllMachinesAIPrediction } from '../controllers/ai-analysis.controller.js';
-
 import { authenticate } from '../middleware/auth.js';
 import { isAdmin } from '../middleware/isAdmin.js';
 
