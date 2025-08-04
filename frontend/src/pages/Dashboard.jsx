@@ -4,7 +4,6 @@ import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
 import AddEquipmentForm from '../components/AddEquipmentForm';
 import LogActivityForm from '../components/LogActivityForm';
-import User from '../../../backend/models/user.model';
 
 const Dashboard = () => {
     const navigate = useNavigate();
