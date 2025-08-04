@@ -17,7 +17,7 @@ const Dashboard = () => {
     const [currentWeather, setCurrentWeather] = useState(null);
     const [location, setLocation] = useState({ latitude: null, longitude: null, error: null });
 
-    // Get user location on component mount
+    // Get user location on mount
     useEffect(() => {
         if (!navigator.geolocation) {
             setLocation(loc => ({ ...loc, error: 'Geolocation is not supported by your browser' }));
@@ -38,6 +38,50 @@ const Dashboard = () => {
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }, []);
+
+    useEffect(() => {
+        const fetchWeather = async () => {
+            if (!location.latitude || !location.longitude) return;
+
+            try {
+                const apiKey = '2458e6496d087230ac1b5a03a0a90d3f';
+                const weatherUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=${apiKey}&units=metric`;
+
+                const res = await fetch(weatherUrl);
+                const weatherJson = await res.json();
+
+                if (!res.ok) throw new Error('Failed to fetch weather');
+
+                const condition = weatherJson.weather?.[0]?.main || 'N/A';
+                const description = weatherJson.weather?.[0]?.description || '';
+                const iconMap = {
+                    Rain: '🌧️',
+                    Clouds: '☁️',
+                    Clear: '☀️',
+                    Snow: '❄️',
+                    Thunderstorm: '⛈️',
+                    Drizzle: '🌦️',
+                    Mist: '🌫️',
+                };
+                const icon = iconMap[condition] || '🌡️';
+
+                setCurrentWeather({
+                    location: weatherJson.name || `Lat ${location.latitude.toFixed(2)}, Lon ${location.longitude.toFixed(2)}`,
+                    temperature: weatherJson.main?.temp || 0,
+                    condition: condition,
+                    humidity: weatherJson.main?.humidity || 0,
+                    windSpeed: weatherJson.wind?.speed || 0,
+                    aqi: '-',
+                    prediction: `Currently ${description}`,
+                    icon: icon,
+                });
+            } catch (err) {
+                console.error('Weather fetch error:', err);
+            }
+        };
+
+        fetchWeather();
+    }, [location.latitude, location.longitude]);
 
     const fetchDashboardData = useCallback(async () => {
         const storedUser = localStorage.getItem('user');
@@ -106,6 +150,8 @@ const Dashboard = () => {
                             ...machine,
                             forecast: latestAnalysis?.aiAnalysis || null,
                             latestLog: latestLog || null,
+                            latestLat: latestLog?.location_lat ?? machine.location_lat ?? null,
+                            latestLon: latestLog?.location_lon ?? machine.location_lon ?? null,
                         };
                     } catch (err) {
                         console.error(`Error fetching extra info for machine ${machine._id}`, err);
@@ -115,20 +161,7 @@ const Dashboard = () => {
             );
 
             setEquipmentData(enrichedMachines);
-
-            setCurrentWeather({
-                location: 'Cikarang, Indonesia',
-                temperature: 32,
-                condition: 'Sunny',
-                humidity: 63,
-                windSpeed: 8,
-                aqi: 3,
-                prediction: 'The weather is sunny and humid, with a chance of light rain in the afternoon. No significant impact on equipment.',
-                icon: '☀️'
-            });
-
             console.log('Dashboard refreshed!', enrichedMachines);
-
         } catch (err) {
             console.error(err);
             setError(err.message);
@@ -147,8 +180,7 @@ const Dashboard = () => {
         setShowLogActivityModal(false);
     };
 
-
-    const handleLogout = async () => {
+    const handleLogout = () => {
         navigate('/login');
     };
 
@@ -164,6 +196,7 @@ const Dashboard = () => {
         });
         return counts;
     };
+
     const statusCounts = getStatusCounts();
 
     if (loading) {

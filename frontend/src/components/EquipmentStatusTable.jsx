@@ -23,9 +23,9 @@ const getWeatherIcon = (weatherMain) => {
         case 'drizzle':
             return <CloudRain className={iconClass} />;
         case 'thunderstorm':
-            return <CloudRain className={iconClass} />; 
+            return <CloudRain className={iconClass} />;
         case 'snow':
-            return <Cloud className={iconClass} />; 
+            return <Cloud className={iconClass} />;
         case 'mist':
         case 'fog':
         case 'haze':
@@ -143,16 +143,22 @@ const EquipmentStatusTable = ({ equipment }) => {
     };
 
     const handleShowWeatherModal = (item) => {
-        const log = item.latestLog || {};
-        const weatherMain = log.weather?.weather_main || '';
-        setCurrentWeather({
-            name: item.name,
-            weatherCondition: weatherMain,
-            weatherPrediction: item.forecast?.notes || 'No prediction available.',
-            rawLog: log,
-        });
-        setShowWeatherModal(true);
-    };
+    const log = item.latestLog || {};
+    const weather = log.weather || {}; 
+    const weatherMain = weather.weather_main || '';
+
+    setCurrentWeather({
+        name: item.name,
+        weatherCondition: weatherMain || '',
+        description: weather.description || '',
+        humidity: weather.humidity ?? null,
+        temp_max: weather.temp_max ?? null,
+        pressure: weather.pressure ?? null,
+        cloudiness: weather.cloudiness ?? null,
+        rawLog: log,
+    });
+    setShowWeatherModal(true);
+};
 
     const handleCloseWeatherModal = () => {
         setShowWeatherModal(false);
@@ -197,7 +203,7 @@ const EquipmentStatusTable = ({ equipment }) => {
                                     {item.type}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
-                                    Lat: {item.location_lat ?? '—'}, Lon: {item.location_lon ?? '—'}
+                                    Lat: {latestLog.location_lat ?? item.location_lat ?? '—'}, Lon: {latestLog.location_lon ?? item.location_lon ?? '—'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                     {level ? (
@@ -247,20 +253,50 @@ const EquipmentStatusTable = ({ equipment }) => {
 
             {/* Weather Modal */}
             {showWeatherModal && currentWeather && (
-                <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-card-bg dark:bg-dark-card-bg p-10 rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up text-text-dark dark:text-text-light">
-                        <h3 className="text-xl font-bold text-center mb-4">Weather Details for {currentWeather.name}</h3>
-                        <div className="flex flex-col items-center space-y-4">
-                            <div className="text-5xl">{getWeatherIcon(currentWeather.weatherCondition)}</div>
-                            <p className="text-lg font-semibold">{currentWeather.weatherCondition || 'Unknown'}</p>
-                            <p className="text-sm text-center text-text-light dark:text-gray-400 italic">
-                                {currentWeather.weatherPrediction}
-                            </p>
+                <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-card-bg dark:bg-dark-card-bg p-8 rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up text-text-dark dark:text-text-light">
+                        <h3 className="text-xl font-bold text-center mb-6">
+                            Weather Details for {currentWeather.name}
+                        </h3>
+
+                        <div className="flex flex-col items-center space-y-6">
+                            <div className="text-6xl">
+                                {getWeatherIcon(currentWeather.weatherCondition)}
+                            </div>
+
+                            <div className="text-center">
+                                <p className="text-lg font-semibold capitalize">
+                                    {currentWeather.weatherCondition || 'Unknown'}
+                                </p>
+                                <p className="text-sm italic text-text-light dark:text-gray-400">
+                                    {currentWeather.description || 'No description available.'}
+                                </p>
+                            </div>
+
+                            <div className="w-full grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="font-semibold">Humidity:</span>{' '}
+                                    {currentWeather.humidity !== null ? `${currentWeather.humidity}%` : 'N/A'}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">Max Temp:</span>{' '}
+                                    {currentWeather.temp_max !== null ? `${currentWeather.temp_max}°C` : 'N/A'}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">Pressure:</span>{' '}
+                                    {currentWeather.pressure !== null ? `${currentWeather.pressure} hPa` : 'N/A'}
+                                </div>
+                                <div>
+                                    <span className="font-semibold">Cloudiness:</span>{' '}
+                                    {currentWeather.cloudiness !== null ? `${currentWeather.cloudiness}%` : 'N/A'}
+                                </div>
+                            </div>
                         </div>
-                        <div className="mt-6 text-center">
+
+                        <div className="mt-8 text-center">
                             <button
                                 onClick={handleCloseWeatherModal}
-                                className="bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
+                                className="bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition-colors"
                             >
                                 Close
                             </button>
@@ -268,6 +304,7 @@ const EquipmentStatusTable = ({ equipment }) => {
                     </div>
                 </div>
             )}
+
         </div>
     );
 };

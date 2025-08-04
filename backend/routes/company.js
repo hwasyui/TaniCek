@@ -100,5 +100,4 @@ router.use('/:companyId/machines', MachineRouter);
 
 router.use('/:companyId/ai-analysis', aiAnalysisRouter);
 
-
 export default router;
