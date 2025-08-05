@@ -150,4 +150,18 @@ router.delete('/:userId', async (req, res) => {
   }
 });
 
+// GET /companies/:companyId/user/:userId/image
+router.get('/:userId/image', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+    if (!user || !user.image) return res.status(404).send('Image not found');
+    
+    res.set('Content-Type', 'image/jpeg'); // atau image/png sesuai yang diupload
+    res.send(user.image);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 export default router;
