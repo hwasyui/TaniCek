@@ -112,18 +112,25 @@ router.put('/:userId', upload.single('image'), async (req, res) => {
   const image = req.file;
 
   try {
+    let updateFields = {
+      email,
+      name,
+      isAdmin,
+      isDeveloper,
+      company_id,
+      socialId,
+      ...(image && { image: image.buffer }),
+    };
+
+    if (password) {
+      // hash password if provided
+      const bcrypt = await import('bcrypt');
+      updateFields.password = await bcrypt.default.hash(password, 10);
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.userId,
-      {
-        email,
-        name,
-        password,
-        isAdmin,
-        isDeveloper,
-        company_id,
-        socialId,
-        ...(image && { image: image.buffer }),
-      },
+      updateFields,
       { new: true, runValidators: true }
     );
 

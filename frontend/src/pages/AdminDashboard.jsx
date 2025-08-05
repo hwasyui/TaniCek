@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
-    const videoRef = useRef(null);
+    // const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const fileInputRef = useRef(null);
     
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     const [currentMachine, setCurrentMachine] = useState(null);
 
     // Camera and image states
-    const [showCamera, setShowCamera] = useState(false);
+    // const [showCamera, setShowCamera] = useState(false);
     const [cameraStream, setCameraStream] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -78,31 +78,33 @@ export default function AdminDashboard() {
     };
 
     const fetchAIHistory = async () => {
-        if (!companyId) return;
-        setLoadingAI(true);
-        try {
-            const res = await fetch(`http://localhost:3000/companies/${companyId}/machines/ai-analysis`, {
-                headers,
-            });
-            const data = await res.json();
+    if (!companyId) return;
+    setLoadingAI(true);
+    try {
+        const res = await fetch(`http://localhost:3000/companies/${companyId}/machines/ai-analysis`, {
+            headers,
+        });
+        const data = await res.json();
 
-            const machineIds = machines.map((m) => m._id);
-            const filtered = (data || [])
-                .map((entry) => ({
-                    ...entry,
-                    aiAnalysis: (entry.aiAnalysis || []).filter((ai) =>
-                        machineIds.includes(ai.machine_id._id)
-                    ),
-                }))
-                .filter((entry) => entry.aiAnalysis.length > 0);
+        const machineIds = machines.map((m) => m._id);
+        const filtered = (data || [])
+            .map((entry) => ({
+                ...entry,
+                aiAnalysis: (entry.aiAnalysis || []).filter((ai) =>
+                    ai.machine_id && machineIds.includes(ai.machine_id._id)
+                ),
+            }))
+            .filter((entry) => entry.aiAnalysis.length > 0);
 
-            setAiHistory(filtered);
-        } catch (err) {
-            console.error('Failed to fetch AI history:', err);
-        } finally {
-            setLoadingAI(false);
-        }
-    };
+        setAiHistory(filtered);
+    } catch (err) {
+        console.error('Failed to fetch AI history:', err);
+    } finally {
+        setLoadingAI(false);
+    }
+};
+
+
 
     useEffect(() => {
         if (activeTab === 'ai-history') {
@@ -209,42 +211,49 @@ export default function AdminDashboard() {
     };
 
     // Camera functions
-    const startCamera = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            setCameraStream(stream);
-            setShowCamera(true);
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream;
-            }
-        } catch (err) {
-            alert('Failed to access camera');
-        }
-    };
+//     const startCamera = async () => {
+//     try {
+//         if (cameraStream) {
+//             cameraStream.getTracks().forEach(track => track.stop());
+//         }
 
-    const capturePhoto = () => {
-        if (videoRef.current && canvasRef.current) {
-            const canvas = canvasRef.current;
-            const video = videoRef.current;
-            const context = canvas.getContext('2d');
+//         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+//         setCameraStream(stream);
+//         setShowCamera(true);
+//         if (videoRef.current) {
+//             videoRef.current.srcObject = stream;
+//         }
+//     } catch (err) {
+//         alert('Failed to access camera');
+//         setShowCamera(false);
+//         setCameraStream(null);
+//     }
+// };
+
+
+    // const capturePhoto = () => {
+    //     if (videoRef.current && canvasRef.current) {
+    //         const canvas = canvasRef.current;
+    //         const video = videoRef.current;
+    //         const context = canvas.getContext('2d');
             
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0);
+    //         canvas.width = video.videoWidth;
+    //         canvas.height = video.videoHeight;
+    //         context.drawImage(video, 0, 0);
             
-            canvas.toBlob((blob) => {
-                setCapturedImage(blob);
-                setSelectedImage(null);
-                setShowCamera(false);
+    //         canvas.toBlob((blob) => {
+    //             setCapturedImage(blob);
+    //             setSelectedImage(null);
+    //             setShowCamera(false);
                 
-                // Stop camera
-                if (cameraStream) {
-                    cameraStream.getTracks().forEach(track => track.stop());
-                    setCameraStream(null);
-                }
-            }, 'image/jpeg', 0.8);
-        }
-    };
+    //             // Stop camera
+    //             if (cameraStream) {
+    //                 cameraStream.getTracks().forEach(track => track.stop());
+    //                 setCameraStream(null);
+    //             }
+    //         }, 'image/jpeg', 0.8);
+    //     }
+    // };
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
@@ -437,7 +446,7 @@ export default function AdminDashboard() {
                                                     <th className="p-2">Image</th>
                                                     <th className="p-2">Name</th>
                                                     <th className="p-2">Email</th>
-                                                    <th className="p-2">Password</th>
+                                                    {/* <th className="p-2">Password</th> */}
                                                     <th className="p-2">Admin</th>
                                                     <th className="p-2">Actions</th>
                                                 </tr>
@@ -450,7 +459,6 @@ export default function AdminDashboard() {
                                                         </td>
                                                         <td className="p-2">{user.name}</td>
                                                         <td className="p-2">{user.email}</td>
-                                                        <td className="p-2">••••••••</td>
                                                         <td className="p-2">{user.isAdmin ? 'Yes' : 'No'}</td>
                                                         <td className="p-2 space-x-2">
                                                             <button 
@@ -501,7 +509,8 @@ export default function AdminDashboard() {
                                             <thead className="bg-green-100">
                                                 <tr>
                                                     <th className="p-2">Name</th>
-                                                    <th className="p-2">Status</th>
+                                                    {/* <th className="p-2">Status</th> */}
+                                                    <th className="p-2">Type</th>
                                                     <th className="p-2">Actions</th>
                                                 </tr>
                                             </thead>
@@ -509,7 +518,7 @@ export default function AdminDashboard() {
                                                 {filteredMachines.map((machine) => (
                                                     <tr key={machine._id} className="border-t">
                                                         <td className="p-2">{machine.name || 'N/A'}</td>
-                                                        <td className="p-2">{machine.status || 'Unknown'}</td>
+                                                        <td className="p-2">{machine.type || 'Unknown'}</td>
                                                         <td className="p-2 space-x-2">
                                                             <button 
                                                                 className="text-blue-600 hover:underline" 
@@ -533,65 +542,66 @@ export default function AdminDashboard() {
                             </div>
                         )}
 
-                        {activeTab === 'ai-history' && (
-                            <div>
-                                <h2 className="text-2xl font-bold text-green-800 mb-4">AI Analysis History</h2>
-                                <div className="flex space-x-4 mb-6">
-                                    <button
-                                        className={`px-4 py-2 rounded ${aiSubTab === 'date' ? 'bg-green-700 text-white' : 'bg-green-200'
-                                            }`}
-                                        onClick={() => setAiSubTab('date')}
-                                    >
-                                        Group by Date
-                                    </button>
-                                    <button
-                                        className={`px-4 py-2 rounded ${aiSubTab === 'machine' ? 'bg-green-700 text-white' : 'bg-green-200'
-                                            }`}
-                                        onClick={() => setAiSubTab('machine')}
-                                    >
-                                        Group by Machine
-                                    </button>
-                                </div>
+                         {activeTab === 'ai-history' && (
+                                <div>
+                                    <h2 className="text-2xl font-bold text-green-800 mb-4">AI Analysis History</h2>
+                                    <div className="flex space-x-4 mb-6">
+                                        <button
+                                            className={`px-4 py-2 rounded ${aiSubTab === 'date' ? 'bg-green-700 text-white' : 'bg-green-200'
+                                                }`}
+                                            onClick={() => setAiSubTab('date')}
+                                        >
+                                            Group by Date
+                                        </button>
+                                        <button
+                                            className={`px-4 py-2 rounded ${aiSubTab === 'machine' ? 'bg-green-700 text-white' : 'bg-green-200'
+                                                }`}
+                                            onClick={() => setAiSubTab('machine')}
+                                        >
+                                            Group by Machine
+                                        </button>
+                                    </div>
 
-                                {loadingAI ? (
-                                    <p>Loading AI history...</p>
-                                ) : aiSubTab === 'date' ? (
-                                    Object.entries(groupByDate()).map(([date, records]) => (
-                                        <div key={date} className="mb-4 bg-white p-4 rounded shadow">
-                                            <h3 className="font-semibold text-lg text-green-800">{date}</h3>
-                                            <ul className="list-disc pl-5 mt-2">
-                                                {records.map((item) => (
-                                                    <li key={item._id}>
-                                                        <strong>Machine:</strong> {item.machine_id.name} <br />
-                                                        <strong>Level:</strong> {item.level} <br />
-                                                        <strong>Notes:</strong> {item.notes}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    ))
-                                ) : (
-                                    Object.entries(groupByMachine()).map(([machineId, records]) => {
-                                        const machine = machines.find((m) => m._id === machineId);
-                                        const machineName = machine ? machine.name : 'Unknown Machine';
-                                        return (
-                                            <div key={machineId} className="mb-4 bg-white p-4 rounded shadow">
-                                                <h3 className="font-semibold text-lg text-green-800">Machine: {machineName}</h3>
+                                    {loadingAI ? (
+                                        <p>Loading AI history...</p>
+                                    ) : aiSubTab === 'date' ? (
+                                        Object.entries(groupByDate()).map(([date, records]) => (
+                                            <div key={date} className="mb-4 bg-white p-4 rounded shadow">
+                                                <h3 className="font-semibold text-lg text-green-800">{date}</h3>
                                                 <ul className="list-disc pl-5 mt-2">
                                                     {records.map((item) => (
                                                         <li key={item._id}>
-                                                            <strong>Date:</strong> {new Date(item.createdAt).toLocaleString()} <br />
+                                                            <strong>Machine:</strong> {item.machine_id.name} <br />
                                                             <strong>Level:</strong> {item.level} <br />
                                                             <strong>Notes:</strong> {item.notes}
                                                         </li>
                                                     ))}
                                                 </ul>
                                             </div>
-                                        );
-                                    })
-                                )}
-                            </div>
-                        )}
+                                        ))
+                                    ) : (
+                                        Object.entries(groupByMachine()).map(([machineId, records]) => {
+                                            const machine = machines.find((m) => m._id === machineId);
+                                            const machineName = machine ? machine.name : 'Unknown Machine';
+                                            return (
+                                                <div key={machineId} className="mb-4 bg-white p-4 rounded shadow">
+                                                    <h3 className="font-semibold text-lg text-green-800">Machine: {machineName}</h3>
+                                                    <ul className="list-disc pl-5 mt-2">
+                                                        {records.map((item) => (
+                                                            <li key={item._id}>
+                                                                <strong>Date:</strong> {new Date(item.createdAt).toLocaleString()} <br />
+                                                                <strong>Level:</strong> {item.level} <br />
+                                                                <strong>Notes:</strong> {item.notes}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            )}
+
                     </>
                 )}
             </main>
@@ -606,10 +616,18 @@ export default function AdminDashboard() {
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.target);
+                            const password = formData.get('password');
+                            const confirmPassword = formData.get('confirmPassword');
+
+                            if (password !== confirmPassword) {
+                                alert('Password and Confirm Password do not match!');
+                                return;
+                            }
+
                             const userData = {
                                 email: formData.get('email'),
                                 name: formData.get('name'),
-                                password: formData.get('password'),
+                                password,
                                 isAdmin: formData.get('isAdmin') === 'on',
                             };
                             handleSaveUser(userData);
@@ -634,10 +652,17 @@ export default function AdminDashboard() {
                                 type="password" 
                                 name="password" 
                                 placeholder="Password" 
-                                defaultValue={currentUser?.password || ''} 
                                 required 
                                 className="mb-2 p-2 border rounded w-full" 
                             />
+                            <input 
+                                type="password" 
+                                name="confirmPassword" 
+                                placeholder="Confirm Password" 
+                                required 
+                                className="mb-2 p-2 border rounded w-full" 
+                            />
+
                             <div className="mb-4">
                                 <label className="flex items-center">
                                     <input 
@@ -690,17 +715,17 @@ export default function AdminDashboard() {
                                     >
                                         Upload Image
                                     </button>
-                                    <button
+                                    {/* <button
                                         type="button"
                                         onClick={startCamera}
                                         className="bg-green-500 text-white px-3 py-1 rounded text-sm"
                                     >
                                         Use Camera
-                                    </button>
+                                    </button> */}
                                 </div>
 
                                 {/* Camera section */}
-                                {showCamera && (
+                                {/* {showCamera && (
                                     <div className="mb-4">
                                         <video 
                                             ref={videoRef} 
@@ -716,7 +741,7 @@ export default function AdminDashboard() {
                                             Capture Photo
                                         </button>
                                     </div>
-                                )}
+                                )} */}
                                 
                                 <canvas ref={canvasRef} className="hidden" />
                             </div>
@@ -766,11 +791,11 @@ export default function AdminDashboard() {
                                 className="mb-2 p-2 border rounded w-full" 
                             />
                             <input 
-                                type="text" 
-                                name="status" 
-                                placeholder="Status" 
-                                defaultValue={currentMachine?.status || ''} 
-                                className="mb-2 p-2 border rounded w-full" 
+                                type="text"
+                                name='type'
+                                placeholder="Machine Type"
+                                defaultValue={currentMachine?.type || ''}
+                                className="mb-2 p-2 border rounded w-full"
                             />
                             <div className="flex justify-end mt-4">
                                 <button 
