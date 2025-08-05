@@ -236,7 +236,7 @@ const EquipmentStatusTable = ({ equipment }) => {
             {/* Reason Modal */}
             {showReasonModal && (
                 <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-card-bg dark:bg-dark-card-bg p-10 rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up text-text-dark dark:text-text-light">
+                    <div className="bg-card-bg dark:bg-dark-card-bg p-10 bg-white rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up text-text-dark dark:text-text-light">
                         <h3 className="text-xl font-bold mb-4">Machine Prediction Info: {currentEquipmentName}</h3>
                         <p className="text-text-light dark:text-text-light mb-6">{currentReason}</p>
                         <div className="flex justify-end">
@@ -244,7 +244,7 @@ const EquipmentStatusTable = ({ equipment }) => {
                                 onClick={handleCloseReason}
                                 className="bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                             >
-                                Close
+                            Close
                             </button>
                         </div>
                     </div>
@@ -253,8 +253,8 @@ const EquipmentStatusTable = ({ equipment }) => {
 
             {/* Weather Modal */}
             {showWeatherModal && currentWeather && (
-                <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-card-bg dark:bg-dark-card-bg p-8 rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up text-text-dark dark:text-text-light">
+                <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-card-bg dark:bg-dark-card-bg p-10 bg-white rounded-lg shadow-2xl max-w-md w-full animate-fade-in-up text-text-dark dark:text-text-light">
                         <h3 className="text-xl font-bold text-center mb-6">
                             Weather Details for {currentWeather.name}
                         </h3>
@@ -298,7 +298,7 @@ const EquipmentStatusTable = ({ equipment }) => {
                                 onClick={handleCloseWeatherModal}
                                 className="bg-green-400 hover:bg-green-500 text-white font-bold py-2 px-6 rounded-lg focus:outline-none focus:shadow-outline transition-colors"
                             >
-                                Close
+                            Close
                             </button>
                         </div>
                     </div>

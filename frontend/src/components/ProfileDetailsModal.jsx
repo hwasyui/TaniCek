@@ -12,7 +12,7 @@ import React from 'react';
         
         return (
             <div className="p-8">
-            <h2 className="text-green-500 bg-white text-2xl font-bold dark:text-text-light mb-6 text-center">Profile Details</h2>
+            <h2 className="text-green-500 bg-white opacity-50 text-2xl font-bold dark:text-text-light mb-6 text-center">Profile Details</h2>
             
             <div className="space-y-4">
                 <div>
@@ -38,11 +38,12 @@ import React from 'react';
             <div className="mt-8 text-center">
                 <button
                 onClick={onClose}
-                className="bg-gray-300 hover:bg-gray-400 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
+                className="bg-gray-500 hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline"
                 >
                 Close
                 </button>
             </div>
+            
             </div>
         );
     };
