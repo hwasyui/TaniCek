@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const fileInputRef = useRef(null);
+    
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -20,20 +24,28 @@ export default function AdminDashboard() {
     const [aiHistory, setAiHistory] = useState([]);
     const [loadingAI, setLoadingAI] = useState(false);
 
-    const [searchUser , setSearchUser ] = useState('');
+    const [searchUser, setSearchUser] = useState('');
     const [searchMachine, setSearchMachine] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const [modalOpen, setModalOpen] = useState(false);
-    const [currentUser , setCurrentUser ] = useState(null);
+    const [modalType, setModalType] = useState(''); // 'user' or 'machine'
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentUser, setCurrentUser] = useState(null);
     const [currentMachine, setCurrentMachine] = useState(null);
 
-    const storedUser  = localStorage.getItem('user');
+    // Camera and image states
+    const [showCamera, setShowCamera] = useState(false);
+    const [cameraStream, setCameraStream] = useState(null);
+    const [capturedImage, setCapturedImage] = useState(null);
+    const [selectedImage, setSelectedImage] = useState(null);
+
+    const storedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
 
-    const user = storedUser  ? JSON.parse(storedUser ) : null;
+    const user = storedUser ? JSON.parse(storedUser) : null;
     const companyId = user?.company;
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -98,7 +110,7 @@ export default function AdminDashboard() {
         }
     }, [activeTab, machines]);
 
-    const handleDeleteUser  = async (id) => {
+    const handleDeleteUser = async (id) => {
         try {
             await fetch(`http://localhost:3000/companies/${companyId}/user/${id}`, {
                 method: 'DELETE',
@@ -124,7 +136,7 @@ export default function AdminDashboard() {
 
     const filteredUsers = users
         .filter((u) =>
-            u.name.toLowerCase().includes(searchUser .toLowerCase())
+            u.name.toLowerCase().includes(searchUser.toLowerCase())
         )
         .filter((u) => (userSubTab === 'admin' ? u.isAdmin : !u.isAdmin));
 
@@ -157,46 +169,124 @@ export default function AdminDashboard() {
         return grouped;
     };
 
-    const handleOpenModal = (user = null, machine = null) => {
-        setCurrentUser (null);
-        setCurrentMachine(null);
-
-        if (user) {
-            setCurrentUser (user);
-        } else if (machine) {
-            setCurrentMachine(machine);
+    const handleOpenModal = (type, item = null) => {
+        setModalType(type);
+        setIsEditing(!!item);
+        
+        if (type === 'user') {
+            setCurrentUser(item);
+            setCurrentMachine(null);
+        } else if (type === 'machine') {
+            setCurrentMachine(item);
+            setCurrentUser(null);
         }
-
+        
+        // Reset image states
+        setCapturedImage(null);
+        setSelectedImage(null);
+        setShowCamera(false);
+        
         setModalOpen(true);
     };
 
     const handleCloseModal = () => {
-        setCurrentUser (null);
+        setCurrentUser(null);
         setCurrentMachine(null);
         setModalOpen(false);
+        setModalType('');
+        setIsEditing(false);
+        
+        // Reset image states
+        setCapturedImage(null);
+        setSelectedImage(null);
+        setShowCamera(false);
+        
+        // Stop camera if running
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            setCameraStream(null);
+        }
     };
 
-    const handleSaveUser  = async (userData) => {
+    // Camera functions
+    const startCamera = async () => {
         try {
-            const method = currentUser  ? 'PUT' : 'POST';
-            const url = currentUser 
-                ? `http://localhost:3000/companies/${companyId}/user/${currentUser ._id}`
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setCameraStream(stream);
+            setShowCamera(true);
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            alert('Failed to access camera');
+        }
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            const context = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
+            
+            canvas.toBlob((blob) => {
+                setCapturedImage(blob);
+                setSelectedImage(null);
+                setShowCamera(false);
+                
+                // Stop camera
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    setCameraStream(null);
+                }
+            }, 'image/jpeg', 0.8);
+        }
+    };
+
+    const handleFileSelect = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedImage(file);
+            setCapturedImage(null);
+        }
+    };
+
+    const handleSaveUser = async (userData) => {
+        try {
+            const formData = new FormData();
+            formData.append('name', userData.name);
+            formData.append('email', userData.email);
+            formData.append('password', userData.password);
+            formData.append('isAdmin', userData.isAdmin);
+            
+            // Add image if available
+            if (capturedImage) {
+                formData.append('image', capturedImage, 'photo.jpg');
+            } else if (selectedImage) {
+                formData.append('image', selectedImage);
+            }
+
+            const method = isEditing ? 'PUT' : 'POST';
+            const url = isEditing
+                ? `http://localhost:3000/companies/${companyId}/user/${currentUser._id}`
                 : `http://localhost:3000/companies/${companyId}/user`;
 
             const response = await fetch(url, {
                 method,
                 headers: {
-                    ...headers,
-                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(userData),
+                body: formData,
             });
 
             const data = await response.json();
             if (response.ok) {
                 setUsers((prev) => {
-                    if (currentUser ) {
-                        return prev.map((u) => (u._id === currentUser ._id ? data.data : u));
+                    if (isEditing) {
+                        return prev.map((u) => (u._id === currentUser._id ? data.data : u));
                     }
                     return [...prev, data.data];
                 });
@@ -211,8 +301,8 @@ export default function AdminDashboard() {
 
     const handleSaveMachine = async (machineData) => {
         try {
-            const method = currentMachine ? 'PUT' : 'POST';
-            const url = currentMachine
+            const method = isEditing ? 'PUT' : 'POST';
+            const url = isEditing
                 ? `http://localhost:3000/companies/${companyId}/machines/${currentMachine._id}`
                 : `http://localhost:3000/companies/${companyId}/machines`;
 
@@ -228,7 +318,7 @@ export default function AdminDashboard() {
             const data = await response.json();
             if (response.ok) {
                 setMachines((prev) => {
-                    if (currentMachine) {
+                    if (isEditing) {
                         return prev.map((m) => (m._id === currentMachine._id ? data.data : m));
                     }
                     return [...prev, data.data];
@@ -240,6 +330,27 @@ export default function AdminDashboard() {
         } catch (err) {
             alert('Failed to save machine');
         }
+    };
+
+    const renderUserImage = (user) => {
+        if (user.image) {
+            // Convert buffer to base64 for display
+            const base64String = btoa(
+                new Uint8Array(user.image.data).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+            return (
+                <img 
+                    src={`data:image/jpeg;base64,${base64String}`} 
+                    alt={user.name}
+                    className="w-12 h-12 rounded-full object-cover"
+                />
+            );
+        }
+        return (
+            <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                <span className="text-gray-600 text-sm">No Image</span>
+            </div>
+        );
     };
 
     return (
@@ -286,7 +397,10 @@ export default function AdminDashboard() {
                             <div>
                                 <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-2xl font-bold text-green-800">Staff / Users</h2>
-                                    <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded" onClick={() => handleOpenModal()}>
+                                    <button 
+                                        className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded" 
+                                        onClick={() => handleOpenModal('user')}
+                                    >
                                         + Add User
                                     </button>
                                 </div>
@@ -310,18 +424,20 @@ export default function AdminDashboard() {
                                     type="text"
                                     placeholder="Search users..."
                                     className="mb-4 p-2 border rounded w-full"
-                                    value={searchUser }
-                                    onChange={(e) => setSearchUser (e.target.value)}
+                                    value={searchUser}
+                                    onChange={(e) => setSearchUser(e.target.value)}
                                 />
-                                <div className="bg-white rounded shadow">
+                                <div className="bg-white rounded shadow overflow-x-auto">
                                     {filteredUsers.length === 0 ? (
                                         <p className="p-4 text-gray-500">No users found.</p>
                                     ) : (
                                         <table className="w-full text-left">
                                             <thead className="bg-green-100">
                                                 <tr>
+                                                    <th className="p-2">Image</th>
                                                     <th className="p-2">Name</th>
                                                     <th className="p-2">Email</th>
+                                                    <th className="p-2">Password</th>
                                                     <th className="p-2">Admin</th>
                                                     <th className="p-2">Actions</th>
                                                 </tr>
@@ -329,14 +445,23 @@ export default function AdminDashboard() {
                                             <tbody>
                                                 {filteredUsers.map((user) => (
                                                     <tr key={user._id} className="border-t">
+                                                        <td className="p-2">
+                                                            {renderUserImage(user)}
+                                                        </td>
                                                         <td className="p-2">{user.name}</td>
                                                         <td className="p-2">{user.email}</td>
+                                                        <td className="p-2">••••••••</td>
                                                         <td className="p-2">{user.isAdmin ? 'Yes' : 'No'}</td>
                                                         <td className="p-2 space-x-2">
-                                                            <button className="text-blue-600 hover:underline" onClick={() => handleOpenModal(user)}>Edit</button>
+                                                            <button 
+                                                                className="text-blue-600 hover:underline" 
+                                                                onClick={() => handleOpenModal('user', user)}
+                                                            >
+                                                                Edit
+                                                            </button>
                                                             <button
                                                                 className="text-red-600 hover:underline"
-                                                                onClick={() => handleDeleteUser (user._id)}
+                                                                onClick={() => handleDeleteUser(user._id)}
                                                             >
                                                                 Delete
                                                             </button>
@@ -354,7 +479,10 @@ export default function AdminDashboard() {
                             <div>
                                 <div className="flex justify-between items-center mb-4">
                                     <h2 className="text-2xl font-bold text-green-800">Machines</h2>
-                                    <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded" onClick={() => handleOpenModal(null, {})}>
+                                    <button 
+                                        className="bg-yellow-400 hover:bg-yellow-500 text-black px-4 py-2 rounded" 
+                                        onClick={() => handleOpenModal('machine')}
+                                    >
                                         + Add Machine
                                     </button>
                                 </div>
@@ -383,7 +511,12 @@ export default function AdminDashboard() {
                                                         <td className="p-2">{machine.name || 'N/A'}</td>
                                                         <td className="p-2">{machine.status || 'Unknown'}</td>
                                                         <td className="p-2 space-x-2">
-                                                            <button className="text-blue-600 hover:underline" onClick={() => handleOpenModal(null, machine)}>Edit</button>
+                                                            <button 
+                                                                className="text-blue-600 hover:underline" 
+                                                                onClick={() => handleOpenModal('machine', machine)}
+                                                            >
+                                                                Edit
+                                                            </button>
                                                             <button
                                                                 className="text-red-600 hover:underline"
                                                                 onClick={() => handleDeleteMachine(machine._id)}
@@ -464,10 +597,12 @@ export default function AdminDashboard() {
             </main>
 
             {/* Modal for User */}
-            {modalOpen && currentUser  && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white p-6 rounded shadow-lg">
-                        <h2 className="text-2xl font-bold mb-4">{currentUser  ? 'Edit User' : 'Add User'}</h2>
+            {modalOpen && modalType === 'user' && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                    <div className="bg-white p-6 rounded shadow-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-2xl font-bold mb-4">
+                            {isEditing ? 'Edit User' : 'Add User'}
+                        </h2>
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.target);
@@ -476,27 +611,129 @@ export default function AdminDashboard() {
                                 name: formData.get('name'),
                                 password: formData.get('password'),
                                 isAdmin: formData.get('isAdmin') === 'on',
-                                isDeveloper: formData.get('isDeveloper') === 'on',
-                                socialId: formData.get('socialId'),
                             };
-                            handleSaveUser (userData);
+                            handleSaveUser(userData);
                         }}>
-                            <input type="text" name="name" placeholder="Name" defaultValue={currentUser ?.name} required className="mb-2 p-2 border rounded w-full" />
-                            <input type="email" name="email" placeholder="Email" defaultValue={currentUser ?.email                            } required className="mb-2 p-2 border rounded w-full" />
-                            <input type="password" name="password" placeholder="Password" defaultValue={currentUser  ?.password} required className="mb-2 p-2 border rounded w-full" />
-                            <label>
-                                <input type="checkbox" name="isAdmin" defaultChecked={currentUser  ?.isAdmin} /> Admin
-                            </label>
-                            <label>
-                                <input type="checkbox" name="isDeveloper" defaultChecked={currentUser  ?.isDeveloper} /> Developer
-                            </label>
-                            <input type="text" name="socialId" placeholder="Social ID" defaultValue={currentUser  ?.socialId} className="mb-2 p-2 border rounded w-full" />
+                            <input 
+                                type="text" 
+                                name="name" 
+                                placeholder="Name" 
+                                defaultValue={currentUser?.name || ''} 
+                                required 
+                                className="mb-2 p-2 border rounded w-full" 
+                            />
+                            <input 
+                                type="email" 
+                                name="email" 
+                                placeholder="Email" 
+                                defaultValue={currentUser?.email || ''} 
+                                required 
+                                className="mb-2 p-2 border rounded w-full" 
+                            />
+                            <input 
+                                type="password" 
+                                name="password" 
+                                placeholder="Password" 
+                                defaultValue={currentUser?.password || ''} 
+                                required 
+                                className="mb-2 p-2 border rounded w-full" 
+                            />
+                            <div className="mb-4">
+                                <label className="flex items-center">
+                                    <input 
+                                        type="checkbox" 
+                                        name="isAdmin" 
+                                        defaultChecked={currentUser?.isAdmin || false} 
+                                        className="mr-2"
+                                    /> 
+                                    Admin
+                                </label>
+                            </div>
+
+                            {/* Image Upload Section */}
+                            <div className="mb-4">
+                                <h3 className="font-semibold mb-2">User Image</h3>
+                                
+                                {/* Current image preview */}
+                                {isEditing && currentUser?.image && !capturedImage && !selectedImage && (
+                                    <div className="mb-2">
+                                        <p className="text-sm text-gray-600 mb-1">Current Image:</p>
+                                        {renderUserImage(currentUser)}
+                                    </div>
+                                )}
+
+                                {/* New image preview */}
+                                {(capturedImage || selectedImage) && (
+                                    <div className="mb-2">
+                                        <p className="text-sm text-gray-600 mb-1">New Image:</p>
+                                        <img 
+                                            src={capturedImage ? URL.createObjectURL(capturedImage) : URL.createObjectURL(selectedImage)}
+                                            alt="New user image"
+                                            className="w-20 h-20 rounded-full object-cover"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Image input options */}
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="file"
+                                        ref={fileInputRef}
+                                        onChange={handleFileSelect}
+                                        accept="image/*"
+                                        className="hidden"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+                                    >
+                                        Upload Image
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={startCamera}
+                                        className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+                                    >
+                                        Use Camera
+                                    </button>
+                                </div>
+
+                                {/* Camera section */}
+                                {showCamera && (
+                                    <div className="mb-4">
+                                        <video 
+                                            ref={videoRef} 
+                                            autoPlay 
+                                            playsInline
+                                            className="w-full h-48 object-cover rounded mb-2"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={capturePhoto}
+                                            className="bg-yellow-500 text-white px-4 py-2 rounded"
+                                        >
+                                            Capture Photo
+                                        </button>
+                                    </div>
+                                )}
+                                
+                                <canvas ref={canvasRef} className="hidden" />
+                            </div>
+
                             <div className="flex justify-end mt-4">
-                                <button type="button" className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={handleCloseModal}>
+                                <button 
+                                    type="button" 
+                                    className="bg-red-500 text-white px-4 py-2 rounded mr-2" 
+                                    onClick={handleCloseModal}
+                                >
                                     Cancel
                                 </button>
-                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
-                                    {currentUser  ? 'Update User' : 'Add User'}
+                                <button 
+                                    type="submit" 
+                                    className="bg-green-500 text-white px-4 py-2 rounded"
+                                >
+                                    {isEditing ? 'Update User' : 'Add User'}
                                 </button>
                             </div>
                         </form>
@@ -505,10 +742,12 @@ export default function AdminDashboard() {
             )}
 
             {/* Modal for Machine */}
-            {modalOpen && currentMachine && (
-                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            {modalOpen && modalType === 'machine' && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white p-6 rounded shadow-lg">
-                        <h2 className="text-2xl font-bold mb-4">{currentMachine ? 'Edit Machine' : 'Add Machine'}</h2>
+                        <h2 className="text-2xl font-bold mb-4">
+                            {isEditing ? 'Edit Machine' : 'Add Machine'}
+                        </h2>
                         <form onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.target);
@@ -518,14 +757,34 @@ export default function AdminDashboard() {
                             };
                             handleSaveMachine(machineData);
                         }}>
-                            <input type="text" name="name" placeholder="Machine Name" defaultValue={currentMachine?.name} required className="mb-2 p-2 border rounded w-full" />
-                            <input type="text" name="status" placeholder="Status" defaultValue={currentMachine?.status} className="mb-2 p-2 border rounded w-full" />
+                            <input 
+                                type="text" 
+                                name="name" 
+                                placeholder="Machine Name" 
+                                defaultValue={currentMachine?.name || ''} 
+                                required 
+                                className="mb-2 p-2 border rounded w-full" 
+                            />
+                            <input 
+                                type="text" 
+                                name="status" 
+                                placeholder="Status" 
+                                defaultValue={currentMachine?.status || ''} 
+                                className="mb-2 p-2 border rounded w-full" 
+                            />
                             <div className="flex justify-end mt-4">
-                                <button type="button" className="bg-red-500 text-white px-4 py-2 rounded mr-2" onClick={handleCloseModal}>
+                                <button 
+                                    type="button" 
+                                    className="bg-red-500 text-white px-4 py-2 rounded mr-2" 
+                                    onClick={handleCloseModal}
+                                >
                                     Cancel
                                 </button>
-                                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded">
-                                    {currentMachine ? 'Update Machine' : 'Add Machine'}
+                                <button 
+                                    type="submit" 
+                                    className="bg-green-500 text-white px-4 py-2 rounded"
+                                >
+                                    {isEditing ? 'Update Machine' : 'Add Machine'}
                                 </button>
                             </div>
                         </form>
