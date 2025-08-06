@@ -18,6 +18,8 @@ export default function AdminDashboard() {
     const [userSubTab, setUserSubTab] = useState('regular');
 
     const [showSidebar, setShowSidebar] = useState(false);
+    const [machineTypes, setMachineTypes] = useState([]); // array of types
+    const [selectedMachineType, setSelectedMachineType] = useState(''); // selected value for dropdown
 
     const [company, setCompany] = useState(null);
     const [users, setUsers] = useState([]);
@@ -55,6 +57,9 @@ export default function AdminDashboard() {
     const user = storedUser ? JSON.parse(storedUser) : null;
     const companyId = user?.company;
     const headers = { Authorization: `Bearer ${token}` };
+
+const allMachineTypes = ['Choose', ...new Set((Array.isArray(machines) ? machines : []).filter(item => item && item.type).map(item => item.type))];
+
 
     useEffect(() => {
         if (!user || !token) return navigate('/login');
@@ -149,9 +154,9 @@ export default function AdminDashboard() {
         )
         .filter((u) => (userSubTab === 'admin' ? u.isAdmin : !u.isAdmin));
 
-    const filteredMachines = machines.filter((m) =>
-        m.name?.toLowerCase().includes(searchMachine.toLowerCase())
-    );
+const filteredMachines = (Array.isArray(machines) ? machines : [])
+    .filter((m) => m && m.name && typeof m.name === 'string')
+    .filter((m) => m.name.toLowerCase().includes(searchMachine.toLowerCase()));
 
     const groupByMachine = () => {
         const grouped = {};
@@ -181,15 +186,17 @@ export default function AdminDashboard() {
     const handleOpenModal = (type, item = null) => {
         setModalType(type);
         setIsEditing(!!item);
-        
+
         if (type === 'user') {
             setCurrentUser(item);
             setCurrentMachine(null);
         } else if (type === 'machine') {
             setCurrentMachine(item);
             setCurrentUser(null);
+            // Set selectedMachineType for edit or add
+            setSelectedMachineType(item?.type || '');
         }
-        
+
         // Reset image states
         setCapturedImage(null);
         setSelectedImage(null);
@@ -209,12 +216,13 @@ export default function AdminDashboard() {
         setModalOpen(false);
         setModalType('');
         setIsEditing(false);
-        
+        setSelectedMachineType('');
+
         // Reset image states
         setCapturedImage(null);
         setSelectedImage(null);
         // setShowCamera(false);
-        
+
         // Stop camera if running
         if (cameraStream) {
             cameraStream.getTracks().forEach(track => track.stop());
@@ -338,12 +346,8 @@ export default function AdminDashboard() {
 
             const data = await response.json();
             if (response.ok) {
-                setMachines((prev) => {
-                    if (isEditing) {
-                        return prev.map((m) => (m._id === currentMachine._id ? data.data : m));
-                    }
-                    return [...prev, data.data];
-                });
+                await fetchData(); // reload latest machines and types
+                setSelectedMachineType('');
                 handleCloseModal();
             } else {
                 alert(data.error);
@@ -822,6 +826,7 @@ export default function AdminDashboard() {
                             const formData = new FormData(e.target);
                             const machineData = {
                                 name: formData.get('name'),
+                                type: selectedMachineType,
                                 status: formData.get('status'),
                             };
                             handleSaveMachine(machineData);
@@ -842,14 +847,18 @@ export default function AdminDashboard() {
                                     </div>
                                     <div className="flex flex-col">
                                         <label htmlFor="type" className="text-sm font-medium text-gray-700 mb-1">Machine Type</label>
-                                        <input 
-                                            type="text"
-                                            name='type'
-                                            id='type'
-                                            placeholder="Machine Type"
-                                            defaultValue={currentMachine?.type || ''}
+                                        <select
+                                            name="type"
+                                            id="type"
                                             className="p-2 border rounded-lg w-full focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
-                                        />
+                                            value={selectedMachineType}
+                                            onChange={(e) => setSelectedMachineType(e.target.value)}
+                                        >
+                                            <option value="" disabled>Select Machine Type</option>
+                                            {allMachineTypes.map((type) => (
+                                                <option key={type} value={type}>{type}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
