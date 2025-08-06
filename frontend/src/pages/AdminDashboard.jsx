@@ -20,6 +20,7 @@ export default function AdminDashboard() {
     const [showSidebar, setShowSidebar] = useState(false);
     const [machineTypes, setMachineTypes] = useState([]); // array of types
     const [selectedMachineType, setSelectedMachineType] = useState(''); // selected value for dropdown
+    const [customMachineType, setCustomMachineType] = useState(''); // for 'Others' input
 
     const [company, setCompany] = useState(null);
     const [users, setUsers] = useState([]);
@@ -40,6 +41,9 @@ export default function AdminDashboard() {
     const [currentUser, setCurrentUser] = useState(null);
     const [currentMachine, setCurrentMachine] = useState(null);
 
+    // Confirmation dialog state
+    const [confirmDialog, setConfirmDialog] = useState({ open: false, type: '', item: null });
+
     // State for password validation in user modal
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -58,7 +62,7 @@ export default function AdminDashboard() {
     const companyId = user?.company;
     const headers = { Authorization: `Bearer ${token}` };
 
-const allMachineTypes = ['Choose', ...new Set((Array.isArray(machines) ? machines : []).filter(item => item && item.type).map(item => item.type))];
+const allMachineTypes = [...new Set((Array.isArray(machines) ? machines : []).filter(item => item && item.type).map(item => item.type)), 'Others'];
 
 
     useEffect(() => {
@@ -124,28 +128,47 @@ const allMachineTypes = ['Choose', ...new Set((Array.isArray(machines) ? machine
         }
     }, [activeTab, machines]);
 
-    const handleDeleteUser = async (id) => {
-        try {
-            await fetch(`http://localhost:3000/companies/${companyId}/user/${id}`, {
-                method: 'DELETE',
-                headers,
-            });
-            setUsers((prev) => prev.filter((u) => u._id !== id));
-        } catch (err) {
-            alert('Failed to delete user');
-        }
+    // Show confirmation dialog before deleting user
+    const handleDeleteUser = (id) => {
+        const user = users.find(u => u._id === id);
+        setConfirmDialog({ open: true, type: 'user', item: user });
     };
 
-    const handleDeleteMachine = async (id) => {
-        try {
-            await fetch(`http://localhost:3000/companies/${companyId}/machines/${id}`, {
-                method: 'DELETE',
-                headers,
-            });
-            setMachines((prev) => prev.filter((m) => m._id !== id));
-        } catch (err) {
-            alert('Failed to delete machine');
+    // Show confirmation dialog before deleting machine
+    const handleDeleteMachine = (id) => {
+        const machine = machines.find(m => m._id === id);
+        setConfirmDialog({ open: true, type: 'machine', item: machine });
+    };
+
+    // Confirmed delete action
+    const confirmDelete = async () => {
+        if (confirmDialog.type === 'user' && confirmDialog.item) {
+            try {
+                await fetch(`http://localhost:3000/companies/${companyId}/user/${confirmDialog.item._id}`, {
+                    method: 'DELETE',
+                    headers,
+                });
+                setUsers((prev) => prev.filter((u) => u._id !== confirmDialog.item._id));
+            } catch (err) {
+                alert('Failed to delete user');
+            }
+        } else if (confirmDialog.type === 'machine' && confirmDialog.item) {
+            try {
+                await fetch(`http://localhost:3000/companies/${companyId}/machines/${confirmDialog.item._id}`, {
+                    method: 'DELETE',
+                    headers,
+                });
+                setMachines((prev) => prev.filter((m) => m._id !== confirmDialog.item._id));
+            } catch (err) {
+                alert('Failed to delete machine');
+            }
         }
+        setConfirmDialog({ open: false, type: '', item: null });
+    };
+
+    // Cancel delete
+    const cancelDelete = () => {
+        setConfirmDialog({ open: false, type: '', item: null });
     };
 
     const filteredUsers = users
@@ -194,7 +217,16 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
             setCurrentMachine(item);
             setCurrentUser(null);
             // Set selectedMachineType for edit or add
-            setSelectedMachineType(item?.type || '');
+            if (item && allMachineTypes.includes(item.type)) {
+                setSelectedMachineType(item.type);
+                setCustomMachineType('');
+            } else if (item && item.type) {
+                setSelectedMachineType('Others');
+                setCustomMachineType(item.type);
+            } else {
+                setSelectedMachineType('');
+                setCustomMachineType('');
+            }
         }
 
         // Reset image states
@@ -217,6 +249,7 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
         setModalType('');
         setIsEditing(false);
         setSelectedMachineType('');
+        setCustomMachineType('');
 
         // Reset image states
         setCapturedImage(null);
@@ -335,19 +368,24 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                 ? `http://localhost:3000/companies/${companyId}/machines/${currentMachine._id}`
                 : `http://localhost:3000/companies/${companyId}/machines`;
 
+            // Use custom type if 'Others' selected
+            const typeToSave = selectedMachineType === 'Others' ? customMachineType : selectedMachineType;
+            const payload = { ...machineData, type: typeToSave };
+
             const response = await fetch(url, {
                 method,
                 headers: {
                     ...headers,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(machineData),
+                body: JSON.stringify(payload),
             });
 
             const data = await response.json();
             if (response.ok) {
                 await fetchData(); // reload latest machines and types
                 setSelectedMachineType('');
+                setCustomMachineType('');
                 handleCloseModal();
             } else {
                 alert(data.error);
@@ -826,7 +864,6 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                             const formData = new FormData(e.target);
                             const machineData = {
                                 name: formData.get('name'),
-                                type: selectedMachineType,
                                 status: formData.get('status'),
                             };
                             handleSaveMachine(machineData);
@@ -859,6 +896,19 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                                 <option key={type} value={type}>{type}</option>
                                             ))}
                                         </select>
+                                        {/* Show input for custom type if 'Others' selected */}
+                                        {selectedMachineType === 'Others' && (
+                                            <input
+                                                type="text"
+                                                name="customType"
+                                                id="customType"
+                                                placeholder="Input machine type"
+                                                value={customMachineType}
+                                                onChange={(e) => setCustomMachineType(e.target.value)}
+                                                className="mt-2 p-2 border rounded-lg w-full focus:ring-2 focus:ring-green-400 focus:outline-none transition-all"
+                                                required
+                                            />
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -881,6 +931,31 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                     </div>
                 </div>
             )}
+        {/* Confirmation Dialog for Delete */}
+        {confirmDialog.open && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+                    <h2 className="text-xl font-bold text-center text-red-700 mb-4">Delete Confirmation</h2>
+                    <p className="text-center text-gray-700 mb-6">
+                        Are you sure to delete {confirmDialog.type === 'user' ? 'user' : 'machine'} <span className="font-semibold">{confirmDialog.item?.name || confirmDialog.item?.email}</span>?<br />This action cannot be undone.
+                    </p>
+                    <div className="flex justify-center gap-4">
+                        <button
+                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all"
+                            onClick={cancelDelete}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-red-400 transition-all"
+                            onClick={confirmDelete}
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
 }
