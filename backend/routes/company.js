@@ -98,6 +98,24 @@ router.use('/:companyId/user', userRouter);
 // GET /companies/:companyId/machines
 router.use('/:companyId/machines', MachineRouter);
 
+
+// GET /companies/:companyId/userlogs
+import UserLog from '../models/userlog.model.js';
+// import Machine from '../models/machine.model.js';
+router.get('/:companyId/userlogs', async (req, res) => {
+  try {
+    const { companyId } = req.params;
+    // Find all machines for this company
+    const machines = await Machine.find({ company: companyId }).select('_id');
+    const machineIds = machines.map(m => m._id);
+    // Find all user logs for these machines, newest first
+    const logs = await UserLog.find({ machine: { $in: machineIds } }).sort({ createdAt: -1 });
+    res.status(200).json(logs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.use('/:companyId/ai-analysis', aiAnalysisRouter);
 
 export default router;
