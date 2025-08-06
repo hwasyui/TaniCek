@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
 import { Sun, Cloud, CloudRain, Wind } from 'lucide-react';
 
 const normalizeLevel = (lvl) => {
@@ -124,6 +123,10 @@ const formatRelativeTime = (iso) => {
 };
 
 const EquipmentStatusTable = ({ equipment }) => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc'); 
+    const [filterType, setFilterType] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All');
     const [showReasonModal, setShowReasonModal] = useState(false);
     const [currentReason, setCurrentReason] = useState('');
     const [currentEquipmentName, setCurrentEquipmentName] = useState('');
@@ -143,95 +146,206 @@ const EquipmentStatusTable = ({ equipment }) => {
     };
 
     const handleShowWeatherModal = (item) => {
-    const log = item.latestLog || {};
-    const weather = log.weather || {}; 
-    const weatherMain = weather.weather_main || '';
+        const log = item.latestLog || {};
+        const weather = log.weather || {}; 
+        const weatherMain = weather.weather_main || '';
 
-    setCurrentWeather({
-        name: item.name,
-        weatherCondition: weatherMain || '',
-        description: weather.description || '',
-        humidity: weather.humidity ?? null,
-        temp_max: weather.temp_max ?? null,
-        pressure: weather.pressure ?? null,
-        cloudiness: weather.cloudiness ?? null,
-        rawLog: log,
-    });
-    setShowWeatherModal(true);
-};
+        setCurrentWeather({
+            name: item.name,
+            weatherCondition: weatherMain || '',
+            description: weather.description || '',
+            humidity: weather.humidity ?? null,
+            temp_max: weather.temp_max ?? null,
+            pressure: weather.pressure ?? null,
+            cloudiness: weather.cloudiness ?? null,
+            rawLog: log,
+        });
+        setShowWeatherModal(true);
+    };
 
     const handleCloseWeatherModal = () => {
         setShowWeatherModal(false);
         setCurrentWeather(null);
     };
 
+    const handleSortByName = () => {
+        setSortDirection(prevDirection => (prevDirection === 'asc' ? 'desc' : 'asc'));
+    };
+
+    const filteredAndSortedEquipment = useMemo(() => {
+        let filtered = [...equipment];
+
+        // Filter by search query
+        if (searchQuery) {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        // Filter by machine type
+        if (filterType !== 'All') {
+            filtered = filtered.filter(item => item.type === filterType);
+        }
+
+        // Filter by machine status
+        if (filterStatus !== 'All') {
+            filtered = filtered.filter(item =>
+                item.forecast?.level?.toLowerCase() === filterStatus.toLowerCase()
+            );
+        }
+
+        // Sort the data
+        filtered.sort((a, b) => {
+            if (sortDirection === 'asc') {
+                return a.name.localeCompare(b.name);
+            } else {
+                return b.name.localeCompare(a.name);
+            }
+        });
+
+        return filtered;
+    }, [equipment, searchQuery, filterType, filterStatus, sortDirection]);
+
     if (!equipment || equipment.length === 0) {
         return (
             <p className="text-center text-text-light dark:text-text-light italic mt-8">
-                No equipment data yet. Please use the "Add New Machines" button on the dashboard.
+                No equipment data yet. Please use the "Add Daily Log" button to start.
             </p>
         );
     }
 
-    return (
-        <div className="overflow-x-auto shadow-sm rounded-lg border border-border-light dark:border-dark-border-light">
-            <table className="min-w-full divide-y divide-border-light dark:divide-dark-border-light">
-                <thead className="bg-green-400 dark:bg-green-500">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs text-white font-medium uppercase tracking-wider">Machine Name</th>
-                        <th className="px-6 py-3 text-left text-xs text-white font-medium uppercase tracking-wider">Machine Type</th>
-                        <th className="px-6 py-3 text-left text-xs text-white font-medium uppercase tracking-wider">Location</th>
-                        <th className="px-6 py-3 text-left text-xs text-white font-medium uppercase tracking-wider">Machine Status</th>
-                        <th className="px-6 py-3 text-left text-xs text-white font-medium uppercase tracking-wider">Log Activity</th>
-                    </tr>
-                </thead>
-                <tbody className="bg-card-bg divide-y divide-border-light dark:bg-dark-card-bg dark:divide-dark-border-light">
-                    {equipment.map((item) => {
-                        const key = item._id || item.id || item.name;
-                        const level = item.forecast?.level ? normalizeLevel(item.forecast.level) : null;
-                        const reason = item.forecast?.notes || 'No details available.';
-                        const latestLog = item.latestLog || {};
-                        const weatherMain = latestLog.weather?.weather_main || '';
-                        const lastLogDateDisplay = formatRelativeTime(latestLog.createdAt);
+    const allMachineTypes = ['All', ...new Set(equipment.map(item => item.type))];
+    const allMachineStatuses = ['All', 'Low', 'Medium', 'High'];
 
-                        return (
-                            <tr key={key}>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-dark dark:text-text-light">
-                                    {item.name}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
-                                    {item.type}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
-                                    Lat: {latestLog.location_lat ?? item.location_lat ?? '—'}, Lon: {latestLog.location_lon ?? item.location_lon ?? '—'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {level ? (
-                                        <StatusBadge
-                                            level={level}
-                                            reason={reason}
-                                            onClick={() => handleShowReason(item.name, reason)}
-                                        />
-                                    ) : (
-                                        <span className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-200 rounded-full dark:bg-gray-700 dark:text-gray-300">
-                                            No data prediction
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
-                                    <button
-                                        onClick={() => handleShowWeatherModal(item)}
-                                        className="flex items-center space-x-2 text-text-light dark:text-text-light hover:text-gray-700 dark:hover:text-gray-300"
+    return (
+        <div>
+            <div className="mb-4 flex flex-wrap gap-3 items-center">
+                {/* Search Bar */}
+                <div className="relative flex-grow max-w-xs">
+                    <input
+                        type="text"
+                        placeholder="Search machines..."
+                        className="pl-10 pr-4 py-2 rounded-lg border border-border-light dark:border-dark-border-light bg-white dark:bg-dark-card-bg text-text-dark dark:text-text-light focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                </div>
+
+                {/* Filter by Machine Type */}
+                <select
+                    className="py-2 px-4 rounded-lg border border-border-light dark:border-dark-border-light text-white bg-green-500 hover:bg-green-600 font-bold dark:bg-dark-card-bg text-text-dark dark:text-text-light focus:outline-none focus:ring-2 focus:ring-green-500"
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value)}
+                >
+                    {allMachineTypes.map(type => (
+                        <option key={type} value={type}>{type === 'All' ? 'All Types' : type}</option>
+                    ))}
+                </select>
+
+                {/* Filter by Machine Status */}
+                <select
+                    className="py-2 px-4 rounded-lg border border-border-light dark:border-dark-border-light text-white bg-green-500 hover:bg-green-600 font-bold dark:bg-dark-card-bg text-text-dark dark:text-text-light focus:outline-none focus:ring-2 focus:ring-green-500"
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                >
+                    {allMachineStatuses.map(status => (
+                        <option key={status} value={status}>{status === 'All' ? 'All Statuses' : status}</option>
+                    ))}
+                </select>
+            </div>
+            
+            <div className="overflow-x-auto shadow-sm rounded-lg border border-border-light dark:border-dark-border-light">
+                <table className="min-w-full divide-y divide-border-light dark:divide-dark-border-light">
+                    <thead className="bg-green-400 dark:bg-green-500">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs text-white font-bold font-medium uppercase tracking-wider">
+                                <button 
+                                    onClick={handleSortByName} 
+                                    className="flex items-center focus:outline-none group relative"
+                                    title="Click to sort by Machine Name"
+                                >
+                                    Machine Name
+                                    <svg
+                                        className={`ml-1 h-4 w-4 transition-transform duration-200 ${sortDirection === 'asc' ? '' : 'transform rotate-180'}`}
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
                                     >
-                                        {getWeatherIcon(weatherMain)}
-                                        <span>{lastLogDateDisplay}</span>
-                                    </button>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 text-xs text-black bg-green-500 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    Click to sort A-Z or Z-A
+                                    </span>
+                                </button>
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs text-white font-bold font-medium uppercase tracking-wider">Machine Type</th>
+                            <th className="px-6 py-3 text-left text-xs text-white font-bold font-medium uppercase tracking-wider">Location</th>
+                            <th className="px-6 py-3 text-left text-xs text-white font-bold font-medium uppercase tracking-wider">Machine Status</th>
+                            <th className="px-6 py-3 text-left text-xs text-white font-bold font-medium uppercase tracking-wider">Log Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-card-bg divide-y divide-border-light dark:bg-dark-card-bg dark:divide-dark-border-light">
+                        {filteredAndSortedEquipment.length > 0 ? (
+                            filteredAndSortedEquipment.map((item) => {
+                                const key = item._id || item.id || item.name;
+                                const level = item.forecast?.level ? normalizeLevel(item.forecast.level) : null;
+                                const reason = item.forecast?.notes || 'No details available.';
+                                const latestLog = item.latestLog || {};
+                                const weatherMain = latestLog.weather?.weather_main || '';
+                                const lastLogDateDisplay = formatRelativeTime(latestLog.createdAt);
+
+                                return (
+                                    <tr key={key}>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-text-dark dark:text-text-light">
+                                            {item.name}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
+                                            {item.type}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
+                                            Lat: {latestLog.location_lat ?? item.location_lat ?? '—'}, Lon: {latestLog.location_lon ?? item.location_lon ?? '—'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            {level ? (
+                                                <StatusBadge
+                                                    level={level}
+                                                    reason={reason}
+                                                    onClick={() => handleShowReason(item.name, reason)}
+                                                />
+                                            ) : (
+                                                <span className="px-3 py-1 text-xs font-semibold text-gray-600 bg-gray-200 rounded-full dark:bg-gray-700 dark:text-gray-300">
+                                                    No data prediction.
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-text-light dark:text-text-light">
+                                            <button
+                                                onClick={() => handleShowWeatherModal(item)}
+                                                className="flex items-center space-x-2 text-text-light dark:text-text-light hover:text-gray-700 dark:hover:text-gray-300"
+                                            >
+                                                {getWeatherIcon(weatherMain)}
+                                                <span>{lastLogDateDisplay}</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
+                        ) : (
+                            <tr>
+                                <td colSpan="5" className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 dark:text-gray-400">
+                                    No machines found.
                                 </td>
                             </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
+                        )}
+                    </tbody>
+                </table>
+            </div>
 
             {/* Reason Modal */}
             {showReasonModal && (

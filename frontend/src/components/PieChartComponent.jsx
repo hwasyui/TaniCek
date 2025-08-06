@@ -1,12 +1,12 @@
 import React from 'react';
-// This is a simple SVG placeholder. For a real app, integrate a charting library like Recharts or Chart.js
+
 const PieChartComponent = ({ data }) => {
-const filteredData = data.filter(item => item.value > 0);
-const total = filteredData.reduce((sum, item) => sum + item.value, 0);
-let cumulativeAngle = 0;
+    const filteredData = data.filter(item => item.value > 0);
+    const total = filteredData.reduce((sum, item) => sum + item.value, 0);
+    let cumulativeAngle = 0;
 
     return (
-        <div className="w-48 h-48 relative">
+        <div className="w-full h-full relative justify-center">
         {filteredData.length > 0 ? (
             <svg viewBox="0 0 100 100" className="w-full h-full">
             {filteredData.map((entry, index) => {
@@ -32,12 +32,12 @@ let cumulativeAngle = 0;
             })}
             </svg>
         ) : (
-            <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-text-light text-xs">
+            <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-text-light dark:bg-gray-800 dark:text-text-light text-xs">
             Data not Found
             </div>
         )}
         </div>
     );
-}
+};
 
 export default PieChartComponent;

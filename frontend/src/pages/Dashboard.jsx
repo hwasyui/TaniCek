@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo} from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
@@ -18,6 +18,10 @@ const Dashboard = () => {
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [currentWeather, setCurrentWeather] = useState(null);
     const [location, setLocation] = useState({ latitude: null, longitude: null, error: null });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc'); 
+    const [filterType, setFilterType] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All');
 
     useEffect(() => {
         if (!navigator.geolocation) {
@@ -199,8 +203,48 @@ const Dashboard = () => {
         });
         return counts;
     };
+    
+    const handleSortByName = () => {
+        setSortDirection(prevDirection => (prevDirection === 'asc' ? 'desc' : 'asc'));
+    };
+
+
 
     const statusCounts = getStatusCounts();
+
+    const filteredAndSortedEquipment = useMemo(() => {
+        let filtered = equipmentData;
+
+        // Filter by search query
+        if (searchQuery) {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
+        // Filter by machine type
+        if (filterType !== 'All') {
+            filtered = filtered.filter(item => item.type === filterType);
+        }
+
+        // Filter by machine status
+        if (filterStatus !== 'All') {
+            filtered = filtered.filter(item =>
+                item.forecast?.level?.toLowerCase() === filterStatus.toLowerCase()
+            );
+        }
+
+        // Sort the data
+        filtered.sort((a, b) => {
+            if (sortDirection === 'asc') {
+                return a.name.localeCompare(b.name);
+            } else {
+                return b.name.localeCompare(a.name);
+            }
+        });
+
+        return filtered;
+    }, [equipmentData, searchQuery, filterType, filterStatus, sortDirection]);
 
     if (loading) {
         return (
@@ -219,6 +263,30 @@ const Dashboard = () => {
             </div>
         );
     }
+
+    const allMachineTypes = ['All', ...new Set(equipmentData.map(item => item.type))];
+    const allMachineStatuses = ['All', 'Low', 'Medium', 'High'];
+
+    const renderStatusBadge = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'high':
+                return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">High</span>;
+            case 'medium':
+                return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Medium</span>;
+            case 'low':
+                return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Low</span>;
+            default:
+                return <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">N/A</span>;
+        }
+    };
+
+    const renderLogActivity = (log) => {
+        if (!log) return 'N/A';
+        const logDate = new Date(log.createdAt);
+        const now = new Date();
+        const diffInHours = Math.floor((now - logDate) / (1000 * 60 * 60));
+        return `${diffInHours} h ago`;
+    };
 
     return (
         <div className="min-h-screen bg-primary-bg dark:bg-dark-primary-bg flex flex-col text-text-dark dark:text-text-light">
@@ -267,28 +335,28 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Card 1: Machine Status Summary */}
                 <div className="md:col-span-1 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
                     <h3 className="text-xl font-semibold text-text-dark dark:text-text-light text-center mb-4">Machine Status Summary</h3>
-                    <div className="flex flex-row items-center justify-center space-x-4">
-                        <div className="w-24 h-24>">
-                        <PieChartComponent
-                            data={[
-                                { name: 'High', value: statusCounts.High, color: '#F44336' },
-                                { name: 'Medium', value: statusCounts.Medium, color: '#FFC107' },
-                                { name: 'Low', value: statusCounts.Low, color: '#4CAF50' },
-                            ]}
-                        />
+                    <div className="flex items-center justify-center space-x-4">
+                        <div className="w-24 h-24 flex-shrink-0">
+                            <PieChartComponent
+                                data={[
+                                    { name: 'High', value: statusCounts.High, color: '#F44336' },
+                                    { name: 'Medium', value: statusCounts.Medium, color: '#FFC107' },
+                                    { name: 'Low', value: statusCounts.Low, color: '#4CAF50' },
+                                ]}
+                            />
+                        </div>
+                        <div className="flex flex-col space-y-1 flex-grow">
+                            <p className="text-lg font-bold text-text-dark dark:text-text-light">Machine Total: {equipmentData.length}</p>
+                            <p className="text-md text-green-500">Low: {statusCounts.Low}</p>
+                            <p className="text-md text-yellow-500">Medium: {statusCounts.Medium}</p>
+                            <p className="text-md text-red-500">High: {statusCounts.High}</p>
+                        </div>
                     </div>
-                    <div className="flex flex-col space-y-1">
-                        <p className="text-lg font-bold text-text-dark dark:text-text-light mb-2">Machine Total: {equipmentData.length}</p>
-                        <p className="text-md text-black-500">Low: {statusCounts.Low}</p>
-                        <p className="text-md text-black-500">Medium: {statusCounts.Medium}</p>
-                        <p className="text-md text-black-500">High: {statusCounts.High}</p>
-                    </div>
-                </div>
                 </div>
 
                 {/* Card 2: Current Weather Prediction */}
