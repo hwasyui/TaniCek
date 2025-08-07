@@ -13,7 +13,7 @@ export default function AdminDashboard() {
     const [selectedUserLog, setSelectedUserLog] = useState(null);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const navigate = useNavigate();
-    // const videoRef = useRef(null);
+    const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const fileInputRef = useRef(null);
     
@@ -26,6 +26,9 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [aiSubTab, setAiSubTab] = useState('date');
     const [userSubTab, setUserSubTab] = useState('regular');
+
+    const [imageInputMode, setImageInputMode] = useState('upload');
+    const [showCamera, setShowCamera] = useState(false);
 
     const [showSidebar, setShowSidebar] = useState(false);
     const [selectedMachineType, setSelectedMachineType] = useState(''); // selected value for dropdown
@@ -347,49 +350,48 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
     };
 
     // Camera functions
-//     const startCamera = async () => {
-//     try {
-//         if (cameraStream) {
-//             cameraStream.getTracks().forEach(track => track.stop());
-//         }
+    const startCamera = async () => {
+        try {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setCameraStream(stream);
+            setShowCamera(true);
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            alert('Failed to access camera');
+            setShowCamera(false);
+            setCameraStream(null);
+        }
+    };
 
-//         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-//         setCameraStream(stream);
-//         setShowCamera(true);
-//         if (videoRef.current) {
-//             videoRef.current.srcObject = stream;
-//         }
-//     } catch (err) {
-//         alert('Failed to access camera');
-//         setShowCamera(false);
-//         setCameraStream(null);
-//     }
-// };
 
-
-    // const capturePhoto = () => {
-    //     if (videoRef.current && canvasRef.current) {
-    //         const canvas = canvasRef.current;
-    //         const video = videoRef.current;
-    //         const context = canvas.getContext('2d');
+    const capturePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const canvas = canvasRef.current;
+            const video = videoRef.current;
+            const context = canvas.getContext('2d');
             
-    //         canvas.width = video.videoWidth;
-    //         canvas.height = video.videoHeight;
-    //         context.drawImage(video, 0, 0);
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0);
             
-    //         canvas.toBlob((blob) => {
-    //             setCapturedImage(blob);
-    //             setSelectedImage(null);
-    //             setShowCamera(false);
+            canvas.toBlob((blob) => {
+                setCapturedImage(blob);
+                setSelectedImage(null);
+                setShowCamera(false);
                 
-    //             // Stop camera
-    //             if (cameraStream) {
-    //                 cameraStream.getTracks().forEach(track => track.stop());
-    //                 setCameraStream(null);
-    //             }
-    //         }, 'image/jpeg', 0.8);
-    //     }
-    // };
+                // Stop camera
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    setCameraStream(null);
+                }
+            }, 'image/jpeg', 0.8);
+        }
+    };
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
@@ -568,12 +570,12 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                 {/* Sidebar menu */}
                 <div className={`sm:block ${showSidebar ? 'block' : 'hidden'} sm:mt-0 mt-4 px-4 sm:px-0`}>
                     {[
-                        {tab: 'dashboard', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z" /></svg>},
-                        {tab: 'company', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v4a1 1 0 001 1h3V7H4a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5H4a1 1 0 00-1 1zm7-8v4a1 1 0 001 1h3V7h-3a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5h-3a1 1 0 00-1 1zm7-8v4a1 1 0 001 1h3V7h-3a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5h-3a1 1 0 00-1 1z" /></svg>},
-                        {tab: 'users', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M3 20h5v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75" /></svg>},
-                        {tab: 'machines', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 21h6l-.75-4M9 7V3h6v4M4 7h16M4 11h16M4 15h16" /></svg>},
-                        {tab: 'ai-history', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg>},
-                    ].map(({tab, icon}) => (
+                        { tab: 'dashboard', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8v-10h-8v10zm0-18v6h8V3h-8z" /></svg> },
+                        { tab: 'company', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v4a1 1 0 001 1h3V7H4a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5H4a1 1 0 00-1 1zm7-8v4a1 1 0 001 1h3V7h-3a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5h-3a1 1 0 00-1 1zm7-8v4a1 1 0 001 1h3V7h-3a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5h-3a1 1 0 00-1 1z" /></svg> },
+                        { tab: 'users', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M3 20h5v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75" /></svg> },
+                        { tab: 'machines', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 21h6l-.75-4M9 7V3h6v4M4 7h16M4 11h16M4 15h16" /></svg> },
+                        { tab: 'ai-history', icon: <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg> },
+                    ].map(({ tab, icon }) => (
                         <button
                             key={tab}
                             className={`flex items-center w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-2 shadow-sm ${activeTab === tab ? 'bg-yellow-400 text-black  shadow-lg' : 'hover:bg-green-100 hover:text-green-900'}`}
@@ -600,8 +602,6 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                 </svg>
                 <span className="text-green-700 font-semibold">Loading...</span>
               </div>
-            ) : companies.length === 0 ? (
-              <p className="text-gray-500">No data found.</p>
             ) : (
                     <div className="w-full max-w-7xl mx-auto overflow-x-auto">
                         {/* Company Info */}
@@ -1189,6 +1189,42 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                             <div className="mb-4">
                                 <h3 className="font-semibold mb-2 text-green-800">User Image</h3>
                                 {/* Current image preview */}
+                                <div className="flex gap-2 mb-2 justify-center">
+                                    <button
+                                        type="button"
+                                        className={`px-3 py-1 rounded-lg text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all ${imageInputMode === 'upload'
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-blue-100'
+                                            }`}
+                                        onClick={() => { setImageInputMode('upload'); setShowCamera(false); }}
+                                    >
+                                        Upload Image
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`px-3 py-1 rounded-lg text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all ${imageInputMode === 'webcam'
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-blue-100'
+                                            }`}
+                                        onClick={async () => {
+                                            setImageInputMode('webcam');
+                                            setShowCamera(true);
+                                            try {
+                                                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                                                setCameraStream(stream);
+                                                if (videoRef.current) {
+                                                    videoRef.current.srcObject = stream;
+                                                }
+                                            } catch (err) {
+                                                alert('Failed to access camera');
+                                                setShowCamera(false);
+                                                setCameraStream(null);
+                                            }
+                                        }}
+                                    >
+                                        Use Webcam
+                                    </button>
+                                </div>
                                 {isEditing && currentUser?.image && !capturedImage && !selectedImage && (
                                     <div className="mb-2 flex flex-col items-center">
                                         <p className="text-sm text-gray-600 mb-1">Current Image:</p>
@@ -1207,23 +1243,50 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                     </div>
                                 )}
                                 {/* Image input options */}
-                                <div className="flex gap-2 mb-2 justify-center">
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        onChange={handleFileSelect}
-                                        accept="image/*"
-                                        className="hidden"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
-                                    >
-                                        Upload Image
-                                    </button>
-                                </div>
-                                <canvas ref={canvasRef} className="hidden" />
+                                {imageInputMode === 'upload' && (
+                                    <div className="flex gap-2 mb-2 justify-center">
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            onChange={handleFileSelect}
+                                            accept="image/*"
+                                            className="hidden"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm shadow focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all"
+                                        >
+                                            Upload Image
+                                        </button>
+                                    </div>
+                                )}
+                                {imageInputMode === 'webcam' && showCamera && (
+                                    <div className="flex flex-col items-center gap-2 mb-2">
+                                        <video ref={videoRef} autoPlay className="w-40 h-40 rounded-lg border" />
+                                        <button
+                                            type="button"
+                                            onClick={capturePhoto}
+                                            className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-sm shadow focus:outline-none focus:ring-2 focus:ring-green-400 transition-all"
+                                        >
+                                            Capture Photo
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setShowCamera(false);
+                                                if (cameraStream) {
+                                                    cameraStream.getTracks().forEach(track => track.stop());
+                                                    setCameraStream(null);
+                                                }
+                                            }}
+                                            className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded-lg text-sm shadow focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all"
+                                        >
+                                            Close Camera
+                                        </button>
+                                        <canvas ref={canvasRef} className="hidden" />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex justify-end gap-2 mt-4">
                                 <button 
