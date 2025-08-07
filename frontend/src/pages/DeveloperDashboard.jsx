@@ -4,12 +4,17 @@ import { useNavigate } from 'react-router-dom';
 
 const SIDEBAR_MENU = [
   { key: 'company', label: 'Company', icon: <svg className="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v4a1 1 0 001 1h3V7H4a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5H4a1 1 0 00-1 1zm7-8v4a1 1 0 001 1h3V7h-3a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5h-3a1 1 0 00-1 1zm7-8v4a1 1 0 001 1h3V7h-3a1 1 0 00-1 1zm0 8v4a1 1 0 001 1h3v-5h-3a1 1 0 00-1 1z" /></svg> },
-  { key: 'users', label: 'Users', icon: <svg className="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M3 20h5v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75" /></svg> },
-  { key: 'machines', label: 'Machines', icon: <svg className="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 21h6l-.75-4M9 7V3h6v4M4 7h16M4 11h16M4 15h16" /></svg> },
-  { key: 'ai-history', label: 'AI History', icon: <svg className="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg> },
+  { key: 'users', label: 'Users', icon: <svg className="w-5 h-5 mr-2 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M3 20h5v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75" /></svg> }
 ];
 
 function DeveloperDashboard() {
+  // State for selected company and search
+  const [selectedCompany, setSelectedCompany] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  // State untuk data user dan loading
+  const [allUsers, setAllUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+
   // State untuk modal detail company
   const [showCompanyDetail, setShowCompanyDetail] = useState({ open: false, company: null, users: [] });
   const [companyDetailLoading, setCompanyDetailLoading] = useState(false);
@@ -25,6 +30,96 @@ function DeveloperDashboard() {
   const [showCompanyModal, setShowCompanyModal] = useState(false);
   const [showDeleteCompany, setShowDeleteCompany] = useState({ open: false, company: null });
   const [companyError, setCompanyError] = useState('');
+
+  // Helper: group users by company
+  const groupUsersByCompany = (users) => {
+    const grouped = {};
+    users.forEach(user => {
+      const companyId = user.company_id?._id || user.company_id || 'No Company';
+      if (!grouped[companyId]) grouped[companyId] = [];
+      grouped[companyId].push(user);
+    });
+    return grouped;
+  };
+
+  // Fetch all users saat tab users aktif
+  React.useEffect(() => {
+    if (activeTab === 'users') {
+      setUsersLoading(true);
+      const token = localStorage.getItem('token');
+      const companyId = localStorage.getItem('companyId');
+      let url = `http://localhost:3000/companies/${companyId}/user`;
+      if (selectedCompany !== 'all') {
+        url = `http://localhost:3000/companies/${selectedCompany}/user`;
+      }
+      fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data && Array.isArray(data.data)) {
+            setAllUsers(data.data);
+          } else {
+            setAllUsers([]);
+          }
+          setUsersLoading(false);
+        })
+        .catch(() => {
+          setAllUsers([]);
+          setUsersLoading(false);
+        });
+    }
+  }, [activeTab, selectedCompany]);
+  // Responsive sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  // State for Add Admin modal
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [newAdminForm, setNewAdminForm] = useState({ name: '', email: '', password: '' });
+  const [addAdminError, setAddAdminError] = useState('');
+  const [addAdminLoading, setAddAdminLoading] = useState(false);
+
+  // Handler for creating new admin
+  const handleAddAdminSubmit = async (e) => {
+    e.preventDefault();
+    setAddAdminError('');
+    if (!newAdminForm.name.trim() || !newAdminForm.email.trim() || !newAdminForm.password.trim()) {
+      setAddAdminError('All fields are required!');
+      return;
+    }
+    setAddAdminLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      const companyId = showCompanyDetail.company?._id;
+      const res = await fetch(`http://localhost:3000/companies/${companyId}/user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: newAdminForm.name,
+          email: newAdminForm.email,
+          password: newAdminForm.password,
+          isAdmin: true,
+          company_id: showCompanyDetail.company?._id
+        })
+      });
+      const data = await res.json();
+      if (data && data.data) {
+        setShowAddAdminModal(false);
+        setNewAdminForm({ name: '', email: '', password: '' });
+        // Optionally, refresh company detail users
+        handleShowCompanyDetail(showCompanyDetail.company);
+      } else {
+        setAddAdminError(data.message || 'Failed to add admin!');
+      }
+    } catch {
+      setAddAdminError('Failed to add admin!');
+    } finally {
+      setAddAdminLoading(false);
+    }
+  };
+  
 
   // Fetch companies
   React.useEffect(() => {
@@ -131,18 +226,33 @@ function DeveloperDashboard() {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-green-100 via-green-50 to-yellow-50 overflow-x-hidden">
-      {/* Sidebar */}
-      <nav className="bg-white shadow-xl border-r border-green-200 text-green-900 w-64 flex flex-col fixed top-0 left-0 h-screen z-40 overflow-y-auto">
-        <div className="flex items-center gap-2 px-6 py-5 border-b border-green-100 bg-green-700 text-white">
+      {/* Mobile Top Navbar */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-green-700 text-white flex items-center justify-between px-4 py-3 shadow-lg">
+        <div className="flex items-center gap-2">
           <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M12 8v8" /></svg>
           <span className="text-xl font-extrabold tracking-wide">Developer Dashboard</span>
+        </div>
+        <button onClick={() => setSidebarOpen(true)} className="p-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400">
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <nav className={`bg-white shadow-xl border-r border-green-200 text-green-900 w-64 flex flex-col fixed top-0 left-0 h-screen z-40 overflow-y-auto transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : 'md:translate-x-0 -translate-x-full'} md:translate-x-0`}> 
+        <div className="flex items-center gap-2 px-6 py-5 border-b border-green-100 bg-green-700 text-white">
+          <span className="text-xl font-extrabold tracking-wide">Developer Dashboard</span>
+          
+          {/* Close button for mobile sidebar */}
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden ml-auto p-2 rounded focus:outline-none focus:ring-2 focus:ring-yellow-400">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
         </div>
         <div className="flex-1 px-4 py-6">
           {SIDEBAR_MENU.map(({ key, label, icon }) => (
             <button
               key={key}
-              className={`flex items-center w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-2 shadow-sm ${activeTab === key ? 'bg-yellow-400 text-black scale-105 shadow-lg' : 'hover:bg-green-100 hover:text-green-900'}`}
-              onClick={() => setActiveTab(key)}
+              className={`flex items-center w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-2 shadow-sm ${activeTab === key ? 'bg-yellow-400 text-black shadow-lg' : 'hover:bg-green-100 hover:text-green-900'}`}
+              onClick={() => { setActiveTab(key); setSidebarOpen(false); }}
             >
               {icon}
               {label}
@@ -157,7 +267,7 @@ function DeveloperDashboard() {
         </div>
       </nav>
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-4 sm:p-8 transition-all duration-300 overflow-x-auto">
+      <main className={`flex-1 transition-all duration-300 overflow-x-auto ${sidebarOpen ? 'md:ml-64' : 'md:ml-64'} ${sidebarOpen ? '' : 'ml-0'} pt-20 md:pt-7 p-4 sm:p-8`}> 
         {/* Company Management */}
         {activeTab === 'company' && (
         <section className="w-full max-w-3xl mx-auto">
@@ -229,7 +339,44 @@ function DeveloperDashboard() {
                                   </div>
                                 </div>
                                 <div>
-                                  <h3 className="font-bold text-green-800 mb-2">Users in Company</h3>
+                                  <div className="flex items-center justify-between mb-2">
+                                    <h3 className="font-bold text-green-800">Users in Company</h3>
+                                    <button
+                                      className="bg-yellow-400 hover:bg-yellow-500 text-black px-3 py-1 rounded font-semibold shadow focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
+                                      onClick={() => setShowAddAdminModal(true)}
+                                    >
+                                      + Add Administrator
+                                    </button>
+                                  </div>
+          {/* Modal Add Administrator */}
+          {showAddAdminModal && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
+                <h2 className="text-2xl font-bold mb-4 text-center text-yellow-800">Add Administrator</h2>
+                <form onSubmit={handleAddAdminSubmit}>
+                  <div className="flex flex-col gap-4 mb-4">
+                    <div className="flex flex-col">
+                      <label htmlFor="adminName" className="text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <input type="text" name="adminName" id="adminName" placeholder="Name" value={newAdminForm.name} onChange={e => setNewAdminForm(f => ({ ...f, name: e.target.value }))} required className="p-2 border rounded-lg w-full focus:ring-2 focus:ring-yellow-400 focus:outline-none transition-all" />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="adminEmail" className="text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" name="adminEmail" id="adminEmail" placeholder="Email" value={newAdminForm.email} onChange={e => setNewAdminForm(f => ({ ...f, email: e.target.value }))} required className="p-2 border rounded-lg w-full focus:ring-2 focus:ring-yellow-400 focus:outline-none transition-all" />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="adminPassword" className="text-sm font-medium text-gray-700 mb-1">Password</label>
+                      <input type="password" name="adminPassword" id="adminPassword" placeholder="Password" value={newAdminForm.password} onChange={e => setNewAdminForm(f => ({ ...f, password: e.target.value }))} required className="p-2 border rounded-lg w-full focus:ring-2 focus:ring-yellow-400 focus:outline-none transition-all" />
+                    </div>
+                    {addAdminError && <div className="text-red-600 text-sm font-semibold mt-1 text-center animate-pulse">{addAdminError}</div>}
+                  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <button type="button" className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-gray-400 transition-all" onClick={() => setShowAddAdminModal(false)}>Cancel</button>
+                    <button type="submit" className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all" disabled={addAdminLoading}>{addAdminLoading ? 'Adding...' : 'Add Admin'}</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
                                   {(() => {
                                     // Helper to get company_id as string
                                     const getCompanyIdString = (company_id) => {
@@ -292,7 +439,11 @@ function DeveloperDashboard() {
                                             <tr key={user._id} className="border-t">
                                               <td className="p-2">{user.name}</td>
                                               <td className="p-2">{user.email}</td>
-                                              <td className="p-2">{user.isAdmin ? 'Admin' : 'User'}</td>
+                                              <td className="p-2">
+                                                <span className={`inline-flex items-center gap-2`}>
+                                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${user.isAdmin ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}`}>{user.isAdmin ? 'Admin' : 'User'}</span>
+                                                </span>
+                                              </td>
                                             </tr>
                                           ))}
                                         </tbody>
@@ -372,40 +523,103 @@ function DeveloperDashboard() {
         )}
         {/* User Management */}
         {activeTab === 'users' && (
-          <section className="w-full max-w-3xl mx-auto">
+          <section className="w-full max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-green-800 mb-6 flex items-center gap-2">
               <svg className="w-7 h-7 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M3 20h5v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75" /></svg>
               User Management
             </h2>
-            {/* ...tampilkan dan kelola data user di sini... */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-green-100 mb-8">
-              <p className="text-lg text-gray-700">Kelola user, tambah/hapus/edit user, dsb.</p>
+            <div className="flex flex-col md:flex-row gap-4 mb-4">
+              <div className="flex-1">
+                <label htmlFor="companySelect" className="block text-sm font-semibold text-green-700 mb-1">Filter by Company</label>
+                <select
+                  id="companySelect"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-400 focus:outline-none"
+                  value={selectedCompany}
+                  onChange={e => setSelectedCompany(e.target.value)}
+                >
+                  <option value="all">All Companies</option>
+                  {companies.map(c => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <label htmlFor="searchUser" className="block text-sm font-semibold text-green-700 mb-1">Search User</label>
+                <input
+                  id="searchUser"
+                  type="text"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-400 focus:outline-none"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
-          </section>
-        )}
-        {/* Machine Management */}
-        {activeTab === 'machines' && (
-          <section className="w-full max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-green-800 mb-6 flex items-center gap-2">
-              <svg className="w-7 h-7 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 21h6l-.75-4M9 7V3h6v4M4 7h16M4 11h16M4 15h16" /></svg>
-              Machine Management
-            </h2>
-            {/* ...tampilkan dan kelola data mesin di sini... */}
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-green-100 mb-8">
-              <p className="text-lg text-gray-700">Kelola mesin, tambah/hapus/edit mesin, dsb.</p>
-            </div>
-          </section>
-        )}
-        {/* AI History */}
-        {activeTab === 'ai-history' && (
-          <section className="w-full max-w-3xl mx-auto">
-            <h2 className="text-2xl font-bold text-green-800 mb-6 flex items-center gap-2">
-              <svg className="w-7 h-7 text-green-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg>
-              AI History
-            </h2>
-            {/* ...tampilkan dan kelola data AI history di sini... */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-green-100 mb-8">
-              <p className="text-lg text-gray-700">Riwayat AI Analysis, detail, dsb.</p>
+              {usersLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <svg className="animate-spin h-10 w-10 text-green-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                  </svg>
+                  <span className="text-green-700 font-semibold">Loading users...</span>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-bold text-green-700 mb-4">All Users Grouped by Company</h3>
+                  {(() => {
+                    const grouped = groupUsersByCompany(allUsers);
+                    let entries = Object.entries(grouped);
+                    if (selectedCompany !== 'all') {
+                      entries = entries.filter(([companyId]) => companyId === selectedCompany);
+                    }
+                    if (entries.length === 0) {
+                      return <div className="text-gray-500">No users found for this company.</div>;
+                    }
+                    return entries.map(([companyId, users]) => {
+                      // Filter by search term
+                      const filteredUsers = users.filter(user => {
+                        const term = searchTerm.toLowerCase();
+                        return (
+                          user.name.toLowerCase().includes(term) ||
+                          user.email.toLowerCase().includes(term)
+                        );
+                      });
+                      if (filteredUsers.length === 0) return null;
+                      return (
+                        <div key={companyId} className="mb-8">
+                          <div className="font-semibold text-green-800 mb-2 text-base">
+                            {users[0]?.company_id?.name || (companyId === 'No Company' ? 'No Company' : companyId)}
+                          </div>
+                          <table className="w-full text-left text-sm mb-2">
+                            <thead className="bg-green-100">
+                              <tr>
+                                <th className="p-2">Name</th>
+                                <th className="p-2">Email</th>
+                                <th className="p-2">Role</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredUsers.map(user => (
+                                <tr key={user._id} className="border-t">
+                                  <td className="p-2">{user.name}</td>
+                                  <td className="p-2">{user.email}</td>
+                                  <td className="p-2">
+                                    <span className={`inline-flex items-center gap-2`}>
+                                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${user.isAdmin ? 'bg-yellow-200 text-yellow-800' : 'bg-green-200 text-green-800'}`}>{user.isAdmin ? 'Admin' : 'User'}</span>
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {filteredUsers.length === 0 && <div className="text-gray-500">No users found for this company.</div>}
+                        </div>
+                      );
+                    });
+                  })()}
+                </>
+              )}
             </div>
           </section>
         )}
@@ -424,7 +638,7 @@ function DeveloperDashboard() {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 export default DeveloperDashboard;

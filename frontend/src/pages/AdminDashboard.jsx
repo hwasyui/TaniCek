@@ -558,7 +558,6 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
             <nav className={`bg-white shadow-xl border-r border-green-200 text-green-900 px-0 sm:px-4 py-0 sm:py-6 w-full sm:w-72 flex flex-col sm:block transition-all duration-300 ${showSidebar ? 'fixed z-50 top-0 left-0 h-full' : 'fixed sm:sticky sm:top-0 sm:left-0 sm:h-screen sm:z-40 h-16'} sm:relative sm:h-screen sm:overflow-y-auto`}> 
                 <div className="flex items-center justify-between sm:block px-4 py-3 sm:p-0 border-b border-green-100 sm:border-none bg-green-700 sm:bg-transparent text-white sm:text-green-900">
                     <div className="flex items-center gap-2">
-                        <svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M12 8v8" /></svg>
                         <h1 className="text-xl sm:text-2xl font-extrabold tracking-wide mb-0 sm:mb-6 drop-shadow">Admin Dashboard</h1>
                     </div>
                     {/* Mobile menu toggle */}
@@ -577,7 +576,7 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                     ].map(({tab, icon}) => (
                         <button
                             key={tab}
-                            className={`flex items-center w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-2 shadow-sm ${activeTab === tab ? 'bg-yellow-400 text-black scale-105 shadow-lg' : 'hover:bg-green-100 hover:text-green-900'}`}
+                            className={`flex items-center w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-2 shadow-sm ${activeTab === tab ? 'bg-yellow-400 text-black  shadow-lg' : 'hover:bg-green-100 hover:text-green-900'}`}
                             onClick={() => { setActiveTab(tab); if (window.innerWidth < 640) setShowSidebar(false); }}
                         >
                             {icon}
@@ -594,33 +593,35 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
             {/* Content */}
             <main className="flex-1 p-2 sm:p-8 transition-all duration-300 overflow-x-auto mt-16 sm:mt-0">
                 {loading ? (
-                    <div className="flex justify-center items-center h-40 animate-pulse">
-                        <p className="text-green-800 text-lg font-bold">Loading...</p>
-                    </div>
-                ) : error ? (
-                    <div className="flex justify-center items-center h-40 animate-pulse">
-                        <p className="text-red-600 text-lg font-bold">{error}</p>
-                    </div>
-                ) : (
+              <div className="flex flex-col items-center justify-center py-12">
+                <svg className="animate-spin h-10 w-10 text-green-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                </svg>
+                <span className="text-green-700 font-semibold">Loading...</span>
+              </div>
+            ) : companies.length === 0 ? (
+              <p className="text-gray-500">No data found.</p>
+            ) : (
                     <div className="w-full max-w-7xl mx-auto overflow-x-auto">
                         {/* Company Info */}
                         {activeTab === 'dashboard' && (
                             <div className="w-full max-w-7xl mx-auto">
-                                <h2 className="text-3xl font-extrabold text-green-900 mb-8 tracking-wide flex items-center gap-2"><svg className="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M12 8v8" /></svg> Dashboard Summary</h2>
+                                <h2 className="text-3xl font-extrabold text-green-900 mb-8 tracking-wide flex items-center gap-2">Dashboard Summary</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                                    <div className="bg-gradient-to-br from-green-200 via-green-100 to-yellow-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-green-200 hover:scale-105 transition-transform duration-200">
+                                    <div className="bg-gradient-to-br from-green-200 via-green-100 to-yellow-100 rounded-2xl shadow-md p-8 flex flex-col items-center border border-green-200 transition-transform duration-200">
                                         <span className="text-4xl font-extrabold text-green-700 drop-shadow-lg">{users.length}</span>
                                         <span className="text-lg text-gray-700 mt-2 font-semibold">Total Users</span>
                                     </div>
-                                    <div className="bg-gradient-to-br from-yellow-200 via-yellow-100 to-green-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-yellow-200 hover:scale-105 transition-transform duration-200">
+                                    <div className="bg-gradient-to-br from-yellow-200 via-yellow-100 to-green-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-yellow-200 transition-transform duration-200">
                                         <span className="text-4xl font-extrabold text-yellow-500 drop-shadow-lg">{machines.length}</span>
                                         <span className="text-lg text-gray-700 mt-2 font-semibold">Total Machines</span>
                                     </div>
-                                    <div className="bg-gradient-to-br from-blue-200 via-blue-100 to-green-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-blue-200 hover:scale-105 transition-transform duration-200">
+                                    <div className="bg-gradient-to-br from-blue-200 via-blue-100 to-green-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-blue-200 transition-transform duration-200">
                                         <span className="text-4xl font-extrabold text-blue-500 drop-shadow-lg">{userLogs.length}</span>
                                         <span className="text-lg text-gray-700 mt-2 font-semibold">User Logs Total</span>
                                     </div>
-                                    <div className="bg-gradient-to-br from-purple-200 via-purple-100 to-green-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-purple-200 hover:scale-105 transition-transform duration-200">
+                                    <div className="bg-gradient-to-br from-purple-200 via-purple-100 to-green-100 rounded-2xl shadow-lg p-8 flex flex-col items-center border border-purple-200 transition-transform duration-200">
                                         <span className="text-4xl font-extrabold text-purple-500 drop-shadow-lg">{(() => {
                                             const today = new Date().toLocaleDateString();
                                             return userLogs.filter(log => new Date(log.createdAt).toLocaleDateString() === today).length;
@@ -668,10 +669,14 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                 <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-green-100">
                                     <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2"><svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg> User Logs Per Day</h3>
                                     {loadingUserLogs ? (
-                                        <div className="flex justify-center items-center h-32 animate-pulse">
-                                            <p className="text-green-800 text-lg font-bold">Loading user logs...</p>
+                                        <div className="flex flex-col items-center justify-center py-12">
+                                            <svg className="animate-spin h-10 w-10 text-green-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                            </svg>
+                                            <span className="text-green-700 font-semibold">Loading logs data...</span>
                                         </div>
-                                    ) : (
+                                        ) : (
                                         <LineChartComponent
                                             labels={(() => {
                                                 // Group logs by date
@@ -1035,10 +1040,14 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                 </div>
 
                                 {loadingAI ? (
-                                    <div className="flex justify-center items-center h-32">
-                                        <p className="text-green-800 text-lg">Loading AI history...</p>
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <svg className="animate-spin h-10 w-10 text-green-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                                        </svg>
+                                        <span className="text-green-700 font-semibold">Loading AI data...</span>
                                     </div>
-                                ) : aiSubTab === 'date' ? (
+                                    ) : aiSubTab === 'date' ? (
                                     <div className="flex flex-col gap-4">
                                         {Object.entries(groupByDate()).map(([date, records]) => (
                                             <div key={date} className="bg-white rounded shadow p-4 flex flex-col gap-2 w-full">
