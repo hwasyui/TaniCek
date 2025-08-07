@@ -4,6 +4,7 @@ import EquipmentStatusTable from '../components/EquipmentStatusTable';
 import PieChartComponent from '../components/PieChartComponent';
 import LogActivityForm from '../components/LogActivityForm';
 import ProfileDetailsModal from '../components/ProfileDetailsModal';
+import { set } from 'mongoose';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -126,6 +127,7 @@ const Dashboard = () => {
             if (!equipmentRes.ok) throw new Error(machines.message || 'Failed to fetch equipment data');
 
             setUserName(userJson.data.name);
+            setUserProfile(userJson.data);
             setCompanyInfo(companyJson.data);
 
             const enrichedMachines = await Promise.all(
@@ -396,27 +398,6 @@ const Dashboard = () => {
                     <EquipmentStatusTable equipment={equipmentData} />
                 </div>
             </main>
-
-                {/* Add Equipment Modal */}
-                {/* {showAddEquipmentModal && (
-                    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-card-bg bg-white bg-dark-bg p-10 rounded-lg shadow-2xl max-w-2xl w-full animate-fade-in-up text-text-dark dark:text-text-light relative">
-                            <button
-                                onClick={() => setShowAddEquipmentModal(false)}
-                                className="absolute top-3 right-3 text-white hover:text-white-600 dark:text-white dark:hover:text-white-200"
-                                aria-label="Close"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                            <AddEquipmentForm
-                                onClose={() => setShowAddEquipmentModal(false)}
-                                onSuccess={handleFormSuccess}
-                            />
-                        </div>
-                    </div>
-                )} */}
 
                 {/* to show log activity modal */}
                 {showLogActivityModal && (

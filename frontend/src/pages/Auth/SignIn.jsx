@@ -67,6 +67,8 @@ const SignIn = () => {
       } else {
         setError("Face not matched. Access denied.");
         stopWebcam();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setShowModal(false);
       }
     } catch (err) {
