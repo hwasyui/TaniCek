@@ -1,4 +1,3 @@
-// const mongoose = require('mongoose');
 import mongoose from "mongoose";
 import bcrypt from 'bcrypt';
 const UserSchema = new mongoose.Schema({
@@ -33,7 +32,7 @@ const UserSchema = new mongoose.Schema({
         default: null
     },
     image: {
-        type: Buffer, // storing as binary data
+        type: Buffer, 
     }, 
 },{timestamps: true} );
 

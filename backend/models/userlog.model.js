@@ -9,12 +9,12 @@ const userLogSchema = new mongoose.Schema({
         required: true },
     note: { type: String },
     weather: {
-        weather_main: { type: String },       // e.g., "Rain"
-        description: { type: String },        // e.g., "moderate rain"
-        humidity: { type: Number },           // % e.g., 60
-        temp_max: { type: Number },           // in Kelvin by default
-        pressure: { type: Number },           // ground level pressure, hPa
-        cloudiness: { type: Number }          // % cloud coverage
+        weather_main: { type: String },       
+        description: { type: String },       
+        humidity: { type: Number },           
+        temp_max: { type: Number },          
+        pressure: { type: Number },           
+        cloudiness: { type: Number }          
     },
     location_lat: { 
         type: Number,

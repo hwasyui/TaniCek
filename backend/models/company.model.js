@@ -1,4 +1,3 @@
-// const mongoose = require('mongoose');
 import mongoose from "mongoose";
 
 const CompanySchema = new mongoose.Schema({
@@ -11,18 +10,16 @@ const CompanySchema = new mongoose.Schema({
         type: String
     },
     image: {
-        type: Buffer, // storing as binary data
+        type: Buffer, 
     }
 }, {timestamps: true});
 
-// Virtual populate
 CompanySchema.virtual('machines', {
     ref: 'Machine',
     localField: '_id',
     foreignField: 'company',
 });
 
-// Enable virtuals in JSON output
 CompanySchema.set('toObject', { virtuals: true });
 CompanySchema.set('toJSON', { virtuals: true });
 

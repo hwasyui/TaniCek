@@ -8,7 +8,6 @@ import aiAnalysisRouter from "./ai-analysis.js";
 
 const router = Router();
 
-// Set up multer for handling multipart/form-data
 const upload = multer();
 
 // POST /companies (with image)
@@ -25,7 +24,6 @@ router.post('/', upload.single('image'), async (req, res) => {
       ...(imageBuffer && { image: imageBuffer })
     });
     const savedCompany = await newCompany.save();
-    // Remove image buffer from response for safety, send base64 if needed
     const responseCompany = savedCompany.toObject();
     if (responseCompany.image) {
       responseCompany.image = { data: responseCompany.image.toString('base64') };
