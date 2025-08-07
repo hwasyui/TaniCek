@@ -5,6 +5,11 @@ import BarChartComponent from '../components/BarChartComponent';
 import LineChartComponent from '../components/LineChartComponent';
 
 export default function AdminDashboard() {
+  // State untuk modal logs
+  const [showLogsModal, setShowLogsModal] = useState({ open: false, logs: {}, selectedDate: null, selectedLogs: [] });
+  // State untuk company
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
     const [selectedUserLog, setSelectedUserLog] = useState(null);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const navigate = useNavigate();
@@ -72,6 +77,21 @@ const allMachineTypes = [...new Set((Array.isArray(machines) ? machines : []).fi
 
 
     useEffect(() => {
+    // Fetch companies dari API
+    const token = localStorage.getItem('token');
+    fetch('http://localhost:3000/companies/', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data.data)) {
+          setCompanies(data.data);
+          if (!selectedCompanyId && data.data.length > 0) setSelectedCompanyId(data.data[0]._id);
+        } else {
+          setCompanies([]);
+        }
+      })
+      .catch(() => setCompanies([]));
         if (!user || !token) return navigate('/login');
         fetchData();
     }, []);
@@ -196,12 +216,51 @@ const allMachineTypes = [...new Set((Array.isArray(machines) ? machines : []).fi
     };
 
     const filteredUsers = users
+        .filter((u) => {
+            // Filter by company_id matching logged-in user's company_id
+            const loggedInCompanyId = (user?.company_id?._id || user?.company_id || user?.company || '').toString();
+            const userCompanyId = (u.company_id?._id || u.company_id || u.company || '').toString();
+            return loggedInCompanyId && userCompanyId && loggedInCompanyId === userCompanyId;
+        })
         .filter((u) =>
             u.name.toLowerCase().includes(searchUser.toLowerCase())
         )
         .filter((u) => (userSubTab === 'admin' ? u.isAdmin : !u.isAdmin));
 
+    // Fungsi untuk membuka modal logs
+  const handleOpenHistoryLogs = async (machineId) => {
+    const token = localStorage.getItem('token');
+    // Fetch logs dari API
+    const res = await fetch(`http://localhost:3000/companies/${selectedCompanyId}/userlogs`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    let logs = await res.json();
+    // Filter logs by selected machineId
+    logs = (Array.isArray(logs) ? logs : []).filter(log => {
+      const logMachineId = (log.machine ).toString();
+      return machineId && logMachineId && logMachineId === machineId;
+    });
+    // Group logs by date
+    const grouped = {};
+    logs.forEach(log => {
+      const date = new Date(log.createdAt).toLocaleDateString();
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(log);
+    });
+    setShowLogsModal({ open: true, logs: grouped, selectedDate: null, selectedLogs: [] });
+  };
+  // Fungsi untuk melihat detail logs per hari
+  const handleSelectDateLogs = (date) => {
+    setShowLogsModal(modal => ({ ...modal, selectedDate: date, selectedLogs: modal.logs[date] }));
+  };
+
 const filteredMachines = (Array.isArray(machines) ? machines : [])
+    .filter((m) => {
+        // Filter by company_id matching logged-in user's company_id
+        const loggedInCompanyId = (user?.company_id?._id || user?.company_id || user?.company || '').toString();
+        const machineCompanyId = (m.company_id?._id || m.company_id || m.company || '').toString();
+        return loggedInCompanyId && machineCompanyId && loggedInCompanyId === machineCompanyId;
+    })
     .filter((m) => m && m.name && typeof m.name === 'string')
     .filter((m) => m.name.toLowerCase().includes(searchMachine.toLowerCase()));
 
@@ -638,29 +697,32 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                             </div>
                         )}
                         {activeTab === 'company' && (
-                            <div className="w-full max-w-2xl mx-auto">
-                                <h2 className="text-2xl font-bold text-green-800 mb-4">Company Info</h2>
-                                {company ? (
-                                    <div className="bg-white p-6 rounded shadow flex flex-col gap-2">
-                                        <p className="text-base sm:text-lg"><strong>Name:</strong> {company.name}</p>
-                                        <p className="text-base sm:text-lg"><strong>Description:</strong> {company.description}</p>
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-500">No company info available.</p>
-                                )}
-                            </div>
-                        )}
+    <div className="w-full max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold text-green-800 mb-4">Company Info</h2>
+        {(() => {
+          // user.company_id is ObjectId, company._id is string; compare as strings
+          const company = companies.find(c => String(c._id) === String(companyId));
+          return company ? (
+            <div className="bg-white p-6 rounded shadow flex flex-col gap-2">
+              <p className="text-base sm:text-lg"><strong>Name:</strong> {company.name}</p>
+              <p className="text-base sm:text-lg"><strong>Address:</strong> {company.address}</p>
+            </div>
+          ) : (
+            <p className="text-gray-500">No company info available.</p>
+          );
+        })()}
+    </div>
+    )}
 
                         {/* Users Tab */}
                         {activeTab === 'users' && (
                             <div className="w-full max-w-full">
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2 px-2 sm:px-0">
                                     <h2 className="text-xl sm:text-2xl font-bold text-green-800 flex items-center gap-2">
-                                        <svg className="w-6 sm:w-7 h-6 sm:h-7 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20h6M3 20h5v-2a4 4 0 013-3.87M16 3.13a4 4 0 010 7.75M8 3.13a4 4 0 000 7.75" /></svg>
                                         Staff / Users
                                     </h2>
                                     <button 
-                                        className="bg-yellow-400 hover:bg-yellow-500 text-black px-3 sm:px-4 py-2 rounded shadow-lg font-semibold flex items-center gap-2 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-auto justify-center"
+                                        className="bg-yellow-400 hover:bg-yellow-500 text-black px-3 sm:px-4 py-2 rounded shadow-lg font-semibold flex items-center gap-2 transition-transform transform focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-auto justify-center"
                                         onClick={() => handleOpenModal('user')}
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -669,14 +731,14 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 px-2 sm:px-0">
                                     <button
-                                        className={`px-4 py-2 rounded font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2 w-full sm:w-auto justify-center ${userSubTab === 'regular' ? 'bg-green-700 text-white scale-105' : 'bg-green-200 text-green-800 hover:bg-green-300 hover:scale-105'}`}
+                                        className={`px-4 py-2 rounded font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-green-400 flex items-center gap-2 w-full sm:w-auto justify-center ${userSubTab === 'regular' ? 'bg-green-700 text-white' : 'bg-green-200 text-green-800 hover:bg-green-300 '}`}
                                         onClick={() => setUserSubTab('regular')}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                                         Regular Staff
                                     </button>
                                     <button
-                                        className={`px-4 py-2 rounded font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 flex items-center gap-2 w-full sm:w-auto justify-center ${userSubTab === 'admin' ? 'bg-green-700 text-white scale-105' : 'bg-green-200 text-green-800 hover:bg-green-300 hover:scale-105'}`}
+                                        className={`px-4 py-2 rounded font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-green-400 flex items-center gap-2 w-full sm:w-auto justify-center ${userSubTab === 'admin' ? 'bg-green-700 text-white' : 'bg-green-200 text-green-800 hover:bg-green-300 '}`}
                                         onClick={() => setUserSubTab('admin')}
                                     >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 01-8 0" /></svg>
@@ -772,6 +834,7 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                                         <th className="p-2 whitespace-nowrap">Name</th>
                                                         <th className="p-2 whitespace-nowrap">Type</th>
                                                         <th className="p-2 whitespace-nowrap">Latest User Log</th>
+                                                        <th className="p-2 whitespace-nowrap">History Logs</th>
                                                         <th className="p-2 whitespace-nowrap">Actions</th>
                                                     </tr>
                                                 </thead>
@@ -794,6 +857,9 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                                                         </button>
                                                                     );
                                                                 })()}
+                                                            </td>
+                                                            <td className="p-2">
+                                                                <button className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700" onClick={() => handleOpenHistoryLogs(machine._id)}>Open History Logs</button>
                                                             </td>
                                                             <td className="p-2 flex flex-col sm:flex-row gap-2">
                                                                 <button
@@ -820,8 +886,134 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                         </div>
                                     )}
                                 </div>
+                                {/* Modal History Logs */}
+                                {showLogsModal.open && (
+                                  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                                    <div className="bg-white p-6 rounded-xl shadow-2xl max-w-2xl w-full">
+                                      <h2 className="text-xl font-bold mb-4 text-center text-green-800">History Logs</h2>
+                                      <div className="mb-4">
+                                        <h3 className="font-semibold mb-2">Group by Date</h3>
+                                        <div className="flex flex-wrap gap-2">
+                                          {Object.keys(showLogsModal.logs).length === 0 ? (
+                                            <span className="text-gray-500">No logs found.</span>
+                                          ) : (
+                                            Object.keys(showLogsModal.logs).map(date => (
+                                              <button key={date} className={`px-3 py-1 rounded hover:bg-green-500 hover:text-white ${showLogsModal.selectedDate === date ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-800'}`} onClick={() => handleSelectDateLogs(date)}>{date}</button>
+                                            ))
+                                          )}
+                                        </div>
+                                      </div>
+                                      {showLogsModal.selectedDate && (
+                                        <div>
+                                          <h3 className="font-semibold mb-2">Logs for {showLogsModal.selectedDate}</h3>
+                                          <table className="w-full text-left text-sm mb-2">
+                                            <thead className="bg-green-100">
+                                              <tr>
+                                                <th className="p-2">Time</th>
+                                                <th className="p-2">User</th>
+                                                <th className="p-2">Activity</th>
+                                                <th className="p-2">Detail</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {showLogsModal.selectedLogs.map(log => (
+                                                <tr key={log._id} className="border-t">
+                                                  <td className="p-2">{new Date(log.createdAt).toLocaleTimeString()}</td>
+                                                  <td className="p-2">{
+                                                    (() => {
+                                                      if (log.user && typeof log.user === 'object' && log.user.name) return log.user.name;
+                                                      if (typeof log.user === 'string' || typeof log.user === 'number') {
+                                                        const userObj = users.find(u => u._id === log.user);
+                                                        return userObj?.name || '-';
+                                                      }
+                                                      return '-';
+                                                    })()
+                                                  }</td>
+                                                  <td className="p-2">{log.note}</td>
+                                                  <td className="p-2">
+                                                    <button className="bg-yellow-400 px-2 py-1 rounded" onClick={() => setSelectedUserLog(log)}>Detail</button>
+                                                  </td>
+                                            {/* Modal for log details */}
+                                            {selectedUserLog && (
+                                                <div className="fixed inset-0 flex items-center justify-center bg-grey-500 bg-opacity-5 z-50">
+                                                <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-y-auto transition-all duration-300 border-2 border-yellow-300">
+                                                    <div className="flex flex-col items-center mb-4">
+                                                    <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mb-2">
+                                                        <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h8M12 8v8" /></svg>
+                                                    </div>
+                                                    <h2 className="text-2xl font-bold mb-1 text-yellow-800">Log Detail</h2>
+                                                    <span className="text-sm text-gray-500">ID: {selectedUserLog._id}</span>
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                                    <div className="flex flex-col gap-2">
+                                                        <span className="text-xs text-gray-400">User</span>
+                                                        <span className="font-semibold text-yellow-700 text-base">{
+                                                        (() => {
+                                                            if (selectedUserLog.user && typeof selectedUserLog.user === 'object' && selectedUserLog.user.name) return selectedUserLog.user.name;
+                                                            if (typeof selectedUserLog.user === 'string' || typeof selectedUserLog.user === 'number') {
+                                                            const userObj = users.find(u => u._id === selectedUserLog.user);
+                                                            return userObj?.name || '-';
+                                                            }
+                                                            return '-';
+                                                        })()
+                                                        }</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <span className="text-xs text-gray-400">Created At</span>
+                                                        <span className="font-semibold text-gray-700 text-base">{new Date(selectedUserLog.createdAt).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2 sm:col-span-2">
+                                                        <span className="text-xs text-gray-400">Note</span>
+                                                        <span className="text-gray-800 text-base">{selectedUserLog.note || '-'}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <span className="text-xs text-gray-400">Location</span>
+                                                        <span className="text-gray-700 text-base">Lat: {selectedUserLog.location_lat || '-'}, Lon: {selectedUserLog.location_lon || '-'}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <span className="text-xs text-gray-400">Weather</span>
+                                                        <span className="text-gray-700 text-base">{selectedUserLog.weather?.description || '-'}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <span className="text-xs text-gray-400">Machine</span>
+                                                        <span className="text-gray-700 text-base">{
+                                                        (() => {
+                                                            if (selectedUserLog.machine_id && typeof selectedUserLog.machine_id === 'object' && selectedUserLog.machine_id.name) return selectedUserLog.machine_id.name;
+                                                            if (typeof selectedUserLog.machine_id === 'string' || typeof selectedUserLog.machine_id === 'number') {
+                                                            const machineObj = machines.find(m => m._id === selectedUserLog.machine_id);
+                                                            return machineObj?.name || '-';
+                                                            }
+                                                            return '-';
+                                                        })()
+                                                        }</span>
+                                                    </div>
+                                                    </div>
+                                                    <div className="flex justify-end mt-2">
+                                                    <button
+                                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-xl shadow focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all font-semibold"
+                                                        onClick={() => setSelectedUserLog(null)}
+                                                    >
+                                                        Close
+                                                    </button>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                            )}
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-end mt-4">
+                                        <button className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg shadow" onClick={() => setShowLogsModal({ open: false, logs: {}, selectedDate: null, selectedLogs: [] })}>Close</button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
                             </div>
                         )}
+  
 
                         {/* AI History Tab */}
                         {activeTab === 'ai-history' && (
