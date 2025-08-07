@@ -50,13 +50,16 @@ def face_verify():
         ref_img_np = cv2.cvtColor(np.array(ref_img), cv2.COLOR_RGB2BGR)
 
         # Perform face verification
-        result = DeepFace.verify(webcam_np, ref_img_np, enforce_detection=False)
+        result = DeepFace.verify(webcam_np, ref_img_np, model_name="ArcFace", detector_backend="retinaface", enforce_detection=False)
 
         print(f"Verification result: {result['verified']}, Distance: {result['distance']:.4f}")
+        THRESHOLD = 0.38 
+        is_verified = result["distance"] <= THRESHOLD
 
         return jsonify({
-            "verified": result["verified"],
+            "verified": is_verified,
             "distance": result["distance"],
+            "threshold": THRESHOLD,
             "attempt": attempt_counters[email]
         })
 
