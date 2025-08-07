@@ -341,9 +341,10 @@ const Dashboard = () => {
 
                 {/* Card 1: Machine Status Summary */}
                 <div className="md:col-span-1 bg-card-bg dark:bg-dark-card-bg p-6 rounded-lg shadow-md">
-                    <h3 className="text-xl font-semibold text-text-dark dark:text-text-light text-center mb-4">Machine Status Summary</h3>
+                <h3 className="text-xl font-semibold text-text-dark dark:text-text-light text-center mb-4">Machine Status Summary</h3>
                     <div className="flex items-center justify-center space-x-4">
-                        <div className="w-24 h-24 flex-shrink-0">
+                        {/* PieChart Components */}
+                        <div className="w-36 h-36 flex-shrink-0">
                             <PieChartComponent
                                 data={[
                                     { name: 'High', value: statusCounts.High, color: '#F44336' },
@@ -352,7 +353,7 @@ const Dashboard = () => {
                                 ]}
                             />
                         </div>
-                        <div className="flex flex-col space-y-1 flex-grow">
+                        <div className="flex flex-col space-y-1">
                             <p className="text-lg font-bold text-text-dark dark:text-text-light">Machine Total: {equipmentData.length}</p>
                             <p className="text-md text-green-500">Low: {statusCounts.Low}</p>
                             <p className="text-md text-yellow-500">Medium: {statusCounts.Medium}</p>
