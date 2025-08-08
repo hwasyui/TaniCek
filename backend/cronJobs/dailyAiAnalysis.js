@@ -7,7 +7,7 @@ async function runDailyAnalysis() {
   console.log('Daily AI analysis completed:', results.length, 'machines analyzed');
 }
 
-cron.schedule('0 8 * * *', () => {
+cron.schedule('45 16 * * *', () => {
   runDailyAnalysis();
 }, {
   timezone: "Asia/Jakarta"

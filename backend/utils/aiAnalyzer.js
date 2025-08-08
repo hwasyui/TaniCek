@@ -68,8 +68,10 @@ Respond **ONLY** with the JSON object, without any explanation or extra text:
     });
 
     const geminiJson = await geminiRes.json();
+    console.log("Gemini response:", geminiJson);
     const rawText = geminiJson.candidates?.[0]?.content?.parts?.[0]?.text;
-
+    console.log("Raw response text:", rawText);
+    
     if (!rawText) {
       throw new Error("No response text from Gemini.");
     }
