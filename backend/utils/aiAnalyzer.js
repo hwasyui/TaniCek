@@ -74,7 +74,6 @@ Respond **ONLY** with the JSON object, without any explanation or extra text:
       throw new Error("No response text from Gemini.");
     }
 
-    // Extract only the first valid {...} JSON block using regex
     const match = rawText.match(/\{[\s\S]*?\}/);
 
     if (!match) {

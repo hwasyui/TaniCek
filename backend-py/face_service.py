@@ -16,7 +16,6 @@ client = pymongo.MongoClient(mongo_uri)
 db = client["kada-final-project"]
 users_collection = db["users"]
 
-# Temporary in-memory counter (resets every restart)
 attempt_counters = {}
 
 @app.route("/face-verify", methods=["POST"])
@@ -26,7 +25,6 @@ def face_verify():
         email = data["email"]
         webcam_base64 = data["webcam"]
 
-        # Initialize attempt counter if not exists
         if email not in attempt_counters:
             attempt_counters[email] = 1
         else:
@@ -34,26 +32,22 @@ def face_verify():
 
         print(f"\n[Attempt {attempt_counters[email]}] Face verification requested for: {email}")
 
-        # Decode webcam image
         webcam_bytes = base64.b64decode(webcam_base64.split(',')[1])
         webcam_img = Image.open(io.BytesIO(webcam_bytes)).convert("RGB")
         webcam_np = cv2.cvtColor(np.array(webcam_img), cv2.COLOR_RGB2BGR)
 
-        # Fetch user image from MongoDB
         user_doc = users_collection.find_one({"email": email})
         if not user_doc or "image" not in user_doc:
             print("Reference image not found in database.")
             return jsonify({"verified": False, "reason": "User image not found"}), 400
 
-        # Prepare reference image
         ref_img = Image.open(io.BytesIO(user_doc["image"])).convert("RGB")
         ref_img_np = cv2.cvtColor(np.array(ref_img), cv2.COLOR_RGB2BGR)
 
-        # Perform face verification
         result = DeepFace.verify(webcam_np, ref_img_np, model_name="ArcFace", detector_backend="retinaface", align=True, enforce_detection=False, anti_spoofing=True)
 
         print(f"Verification result: {result['verified']}, Distance: {result['distance']:.4f}")
-        THRESHOLD = 0.38 
+        THRESHOLD = 0.45
         is_verified = result["distance"] <= THRESHOLD
 
         return jsonify({
