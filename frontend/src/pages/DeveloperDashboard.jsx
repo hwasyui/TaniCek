@@ -74,7 +74,7 @@ function DeveloperDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // State for Add Admin modal
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
-  const [newAdminForm, setNewAdminForm] = useState({ name: '', email: '', password: '' });
+  const [newAdminForm, setNewAdminForm] = useState({ name: '', email: '', password: '', image: null });
   const [addAdminError, setAddAdminError] = useState('');
   const [addAdminLoading, setAddAdminLoading] = useState(false);
 
@@ -82,33 +82,33 @@ function DeveloperDashboard() {
   const handleAddAdminSubmit = async (e) => {
     e.preventDefault();
     setAddAdminError('');
-    if (!newAdminForm.name.trim() || !newAdminForm.email.trim() || !newAdminForm.password.trim()) {
-      setAddAdminError('All fields are required!');
+    if (!newAdminForm.name.trim() || !newAdminForm.email.trim() || !newAdminForm.password.trim() || !newAdminForm.image) {
+      setAddAdminError('All fields including face image are required!');
       return;
     }
     setAddAdminLoading(true);
     const token = localStorage.getItem('token');
     try {
       const companyId = showCompanyDetail.company?._id;
+      const formData = new FormData();
+      formData.append('name', newAdminForm.name);
+      formData.append('email', newAdminForm.email);
+      formData.append('password', newAdminForm.password);
+      formData.append('isAdmin', true);
+      formData.append('company_id', companyId);
+      formData.append('image', newAdminForm.image);
       const res = await fetch(`http://localhost:3000/companies/${companyId}/user`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name: newAdminForm.name,
-          email: newAdminForm.email,
-          password: newAdminForm.password,
-          isAdmin: true,
-          company_id: showCompanyDetail.company?._id
-        })
+        body: formData
       });
       const data = await res.json();
       if (data && data.data) {
         setShowAddAdminModal(false);
-        setNewAdminForm({ name: '', email: '', password: '' });
-        // Optionally, refresh company detail users
+        setNewAdminForm({ name: '', email: '', password: '', image: null });
+        // Refresh company detail users and filter by company_id
         handleShowCompanyDetail(showCompanyDetail.company);
       } else {
         setAddAdminError(data.message || 'Failed to add admin!');
@@ -210,7 +210,21 @@ function DeveloperDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userData = await userRes.json();
-      setShowCompanyDetail({ open: true, company: data.data, users: Array.isArray(userData.data) ? userData.data : [] });
+      // Filter users to only those with matching company_id
+      const getCompanyIdString = (company_id) => {
+        if (!company_id) return '';
+        if (typeof company_id === 'string') return company_id;
+        if (typeof company_id === 'object' && company_id !== null) {
+          if (company_id._id) return String(company_id._id);
+          if (company_id.toString && typeof company_id.toString === 'function') return company_id.toString();
+          return JSON.stringify(company_id);
+        }
+        return String(company_id);
+      };
+      const filteredUsers = Array.isArray(userData.data)
+        ? userData.data.filter(user => getCompanyIdString(user.company_id) === String(company._id))
+        : [];
+      setShowCompanyDetail({ open: true, company: data.data, users: filteredUsers });
     } catch {
       setShowCompanyDetail({ open: true, company, users: [] });
     } finally {
@@ -353,7 +367,7 @@ function DeveloperDashboard() {
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
               <div className="bg-white p-6 rounded-xl shadow-2xl max-w-md w-full">
                 <h2 className="text-2xl font-bold mb-4 text-center text-yellow-800">Add Administrator</h2>
-                <form onSubmit={handleAddAdminSubmit}>
+                <form onSubmit={handleAddAdminSubmit} encType="multipart/form-data">
                   <div className="flex flex-col gap-4 mb-4">
                     <div className="flex flex-col">
                       <label htmlFor="adminName" className="text-sm font-medium text-gray-700 mb-1">Name</label>
@@ -366,6 +380,10 @@ function DeveloperDashboard() {
                     <div className="flex flex-col">
                       <label htmlFor="adminPassword" className="text-sm font-medium text-gray-700 mb-1">Password</label>
                       <input type="password" name="adminPassword" id="adminPassword" placeholder="Password" value={newAdminForm.password} onChange={e => setNewAdminForm(f => ({ ...f, password: e.target.value }))} required className="p-2 border rounded-lg w-full focus:ring-2 focus:ring-yellow-400 focus:outline-none transition-all" />
+                    </div>
+                    <div className="flex flex-col">
+                      <label htmlFor="adminImage" className="text-sm font-medium text-gray-700 mb-1">Face Image</label>
+                      <input type="file" name="adminImage" id="adminImage" accept="image/*" onChange={e => setNewAdminForm(f => ({ ...f, image: e.target.files[0] }))} className="p-2 border rounded-lg w-full focus:ring-2 focus:ring-yellow-400 focus:outline-none transition-all" />
                     </div>
                     {addAdminError && <div className="text-red-600 text-sm font-semibold mt-1 text-center animate-pulse">{addAdminError}</div>}
                   </div>
