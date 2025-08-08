@@ -51,7 +51,7 @@ cd TaniCek
 ```bash
 cd backend
 npm install
-npm run dev
+npm start
 ```
 Configure environment variables (e.g., .env) for database and API keys as needed.
 
@@ -117,7 +117,7 @@ Meet the passionate team behind TaniCek:
 | Name                       | Role                | Tech Stacks Used                          |
 |----------------------------|---------------------|-------------------------------------------|
 | **Alif Elang Abhipraya**   | Fullstack Developer | React, Vite, Node.js, Express, MongoDB, Passport  |
-| **Alia Nurul Aziiza**      | Fullstack Developer | React, Vite, TailwindCSS, .js |
+| **Alia Nurul Aziiza**      | Fullstack Developer | React, Vite, TailwindCSS |
 | **Angelita Suti Whiharto** | Fullstack Developer | React, Vite, Node.js, Python, OpenCV, face_recognition  |
 
 We work together to deliver a robust, scalable, and user-friendly agricultural management platform. Each member contributes to both frontend and backend, ensuring seamless integration and innovative features.
