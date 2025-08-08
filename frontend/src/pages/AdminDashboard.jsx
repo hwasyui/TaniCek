@@ -641,7 +641,6 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                                         <tr>
                                                             <th className="p-2 whitespace-nowrap">Name</th>
                                                             <th className="p-2 whitespace-nowrap">Type</th>
-                                                            <th className="p-2 whitespace-nowrap">Status</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -649,7 +648,6 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                                             <tr key={machine._id} className="border-t hover:bg-green-50 transition-all">
                                                                 <td className="p-2 break-words max-w-[120px] font-semibold">{machine.name || 'N/A'}</td>
                                                                 <td className="p-2 break-words max-w-[120px]">{machine.type || 'Unknown'}</td>
-                                                                <td className="p-2 break-words max-w-[120px]">{machine.status || 'Unknown'}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -666,7 +664,7 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                         />
                                     </div>
                                 </div>
-                                <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-green-100">
+                                {/* <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-green-100">
                                     <h3 className="text-xl font-bold text-green-800 mb-4 flex items-center gap-2"><svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z" /></svg> User Logs Per Day</h3>
                                     {loadingUserLogs ? (
                                         <div className="flex flex-col items-center justify-center py-12">
@@ -698,7 +696,7 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                             title="User Logs Per Day"
                                         />
                                     )}
-                                </div>
+                                </div> */}
                             </div>
                         )}
                         {activeTab === 'company' && (

@@ -25,13 +25,13 @@ import React from 'react';
                 </div>
                 <div>
                 <label className="block bg-white text-text-light dark:text-black text-sm font-medium mb-1">Role Status:</label>
-                <p className="bg-white text-text-dark dark:text-text-light text-lg font-semibold capitalize">{userProfile.role}</p>
+                <p className="bg-white text-text-dark dark:text-text-light text-lg font-semibold capitalize">{userProfile.isAdmin ? 'Admin' : 'User'}</p>
                 </div>
                 <div>
-                <label className="block bg-white text-text-light dark:text-black text-sm font-medium mb-1">Joined Date:</label>
+                {/* <label className="block bg-white text-text-light dark:text-black text-sm font-medium mb-1">Joined Date:</label>
                 <p className="bg-white  text-text-dark dark:text-text-light text-lg font-semibold">
                     {userProfile.created_at ? new Date(userProfile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
-                </p>
+                </p> */}
                 </div>
             </div>
 

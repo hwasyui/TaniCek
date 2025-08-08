@@ -44,10 +44,10 @@ def face_verify():
         ref_img = Image.open(io.BytesIO(user_doc["image"])).convert("RGB")
         ref_img_np = cv2.cvtColor(np.array(ref_img), cv2.COLOR_RGB2BGR)
 
-        result = DeepFace.verify(webcam_np, ref_img_np, model_name="ArcFace", detector_backend="retinaface", align=True, enforce_detection=False, anti_spoofing=True)
+        result = DeepFace.verify(webcam_np, ref_img_np, model_name="ArcFace", detector_backend="retinaface", align=True, enforce_detection=False, anti_spoofing=False)
 
         print(f"Verification result: {result['verified']}, Distance: {result['distance']:.4f}")
-        THRESHOLD = 0.45
+        THRESHOLD = 0.60
         is_verified = result["distance"] <= THRESHOLD
 
         return jsonify({
