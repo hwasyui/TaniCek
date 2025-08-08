@@ -130,7 +130,7 @@ export const deleteUserLog = async (req, res) => {
 
     const deletedLog = await UserLog.findOneAndDelete({ _id: logId, user: req.user._id });
     if (!deletedLog) return res.status(404).json({ message: "Log not found or unauthorized" });
-    return res.status(200).json({ message: "Machine deleted successfully" });
+    return res.status(200).json({ message: "Logs deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Delete log failed", error: error.message });
   }
