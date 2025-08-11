@@ -1047,37 +1047,80 @@ const filteredMachines = (Array.isArray(machines) ? machines : [])
                                     </div>
                                     ) : aiSubTab === 'date' ? (
                                     <div className="flex flex-col gap-4">
-                                        {Object.entries(groupByDate()).map(([date, records]) => (
+                                        {Object.entries(groupByDate()).sort((a, b) => new Date(b[0]) - new Date(a[0])).map(([date, records]) => (
                                             <div key={date} className="bg-white rounded shadow p-4 flex flex-col gap-2 w-full">
                                                 <h3 className="font-semibold text-lg text-green-800 mb-2">{date}</h3>
                                                 <div className="flex flex-col gap-2">
-                                                    {records.map((item) => (
-                                                        <div key={item._id} className="border rounded p-3 flex flex-row flex-wrap items-center gap-4 bg-green-50 hover:bg-green-100 transition-all">
-                                                            <span className="block text-sm sm:text-base font-semibold text-green-700 min-w-[120px]"><strong>Machine:</strong> {item.machine_id.name}</span>
-                                                            <span className="block text-sm sm:text-base min-w-[80px]"><strong>Level:</strong> {item.level}</span>
-                                                            <span className="block text-sm sm:text-base min-w-[120px]"><strong>Notes:</strong> {item.notes}</span>
-                                                        </div>
-                                                    ))}
+                                                    {records.slice().reverse().map((item) => {
+                                                        let bgColor = '';
+                                                        switch (item.level?.toLowerCase()) {
+                                                            case 'low':
+                                                                bgColor = 'bg-green-50 hover:bg-green-100';
+                                                                break;
+                                                            case 'medium':
+                                                                bgColor = 'bg-yellow-50 hover:bg-yellow-100';
+                                                                break;
+                                                            case 'high':
+                                                                bgColor = 'bg-orange-50 hover:bg-orange-100';
+                                                                break;
+                                                            case 'critical':
+                                                                bgColor = 'bg-red-50 hover:bg-red-100';
+                                                                break;
+                                                            default:
+                                                                bgColor = 'bg-gray-50 hover:bg-gray-100';
+                                                        }
+                                                        return (
+                                                            <div key={item._id} className={`border rounded p-3 flex flex-row flex-wrap items-center gap-4 transition-all ${bgColor}`}>
+                                                                <span className="block text-sm sm:text-base font-semibold text-green-700 min-w-[120px]"><strong>Machine:</strong> {item.machine_id.name}</span>
+                                                                <span className="block text-sm sm:text-base min-w-[80px]"><strong>Level:</strong> {item.level}</span>
+                                                                <span className="block text-sm sm:text-base min-w-[120px]"><strong>Notes:</strong> {item.notes}</span>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 ) : (
                                     <div className="flex flex-col gap-4">
-                                        {Object.entries(groupByMachine()).map(([machineId, records]) => {
+                                        {Object.entries(groupByMachine()).sort((a, b) => {
+                                          // Sort by latest record in each machine group
+                                          const latestA = a[1].length ? new Date(a[1][a[1].length - 1].createdAt) : 0;
+                                          const latestB = b[1].length ? new Date(b[1][b[1].length - 1].createdAt) : 0;
+                                          return latestB - latestA;
+                                        }).map(([machineId, records]) => {
                                             const machine = machines.find((m) => m._id === machineId);
                                             const machineName = machine ? machine.name : 'Unknown Machine';
                                             return (
                                                 <div key={machineId} className="bg-white rounded shadow p-4 flex flex-col gap-2 w-full">
                                                     <h3 className="font-semibold text-lg text-green-800 mb-2">Machine: {machineName}</h3>
                                                     <div className="flex flex-col gap-2">
-                                                        {records.map((item) => (
-                                                            <div key={item._id} className="border rounded p-3 flex flex-row flex-wrap items-center gap-4 bg-green-50 hover:bg-green-100 transition-all">
-                                                                <span className="block text-sm sm:text-base font-semibold text-green-700 min-w-[140px]"><strong>Date:</strong> {new Date(item.createdAt).toLocaleString()}</span>
-                                                                <span className="block text-sm sm:text-base min-w-[80px]"><strong>Level:</strong> {item.level}</span>
-                                                                <span className="block text-sm sm:text-base min-w-[120px]"><strong>Notes:</strong> {item.notes}</span>
-                                                            </div>
-                                                        ))}
+                                                        {records.slice().reverse().map((item) => {
+                                                            let bgColor = '';
+                                                            switch (item.level?.toLowerCase()) {
+                                                                case 'low':
+                                                                    bgColor = 'bg-green-50 hover:bg-green-100';
+                                                                    break;
+                                                                case 'medium':
+                                                                    bgColor = 'bg-yellow-50 hover:bg-yellow-100';
+                                                                    break;
+                                                                case 'high':
+                                                                    bgColor = 'bg-orange-50 hover:bg-orange-100';
+                                                                    break;
+                                                                case 'critical':
+                                                                    bgColor = 'bg-red-50 hover:bg-red-100';
+                                                                    break;
+                                                                default:
+                                                                    bgColor = 'bg-gray-50 hover:bg-gray-100';
+                                                            }
+                                                            return (
+                                                                <div key={item._id} className={`border rounded p-3 flex flex-row flex-wrap items-center gap-4 transition-all ${bgColor}`}>
+                                                                    <span className="block text-sm sm:text-base font-semibold text-green-700 min-w-[140px]"><strong>Date:</strong> {new Date(item.createdAt).toLocaleString()}</span>
+                                                                    <span className="block text-sm sm:text-base min-w-[80px]"><strong>Level:</strong> {item.level}</span>
+                                                                    <span className="block text-sm sm:text-base min-w-[120px]"><strong>Notes:</strong> {item.notes}</span>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             );
