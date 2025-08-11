@@ -4,5 +4,9 @@ opencv-python
 numpy
 pymongo
 deepface
-Pillow
-
+pillow
+tensorflow
+keras
+mtcnn
+retina-face
+gdown
